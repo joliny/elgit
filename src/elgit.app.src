@@ -1,0 +1,8 @@
+{application, elgit, [
+    {description, "el git - erlang git repository browser"},
+    {vsn, "1"},
+    {registered, []},
+    {applications, []},
+    {env, []},
+    {modules, [elgit_app, elgit_yaws]}
+]}.

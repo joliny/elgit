@@ -14,10 +14,27 @@ Fetch the El GIT repository and make it (fetches dependencies):
     $ cd gert
     $ make
 
+### Yaws configuration
+
+Add the following lines to your yaws.conf:
+
+    ebin_dir = /path/to/elgit/ebin
+    ebin_dir = /path/to/elgit/ebin/gert/ebin
+
+    runmod = elgit_app
+
+    <server elgit.dev>
+        port = 80
+        listen = 0.0.0.0
+        appmods = </, elgit_yaws>
+    </server>
+
+And (re-)start Yaws.
+
 
 ## Usage
 
-Nothing to use, yet :D
+Open http://elgit.dev in your browser and enjoy "Hello World!".
 
 
 ## Contributing
