@@ -10,7 +10,19 @@ out(Arg) ->
         Path /= "/" ->
             {redirect_local, "/"};
         true ->
-            [{ehtml,
-              [{h1, [], "Hello World!"},
-               {h2, [], ["HEAD: ", gert:get_head_sha(Arg#arg.docroot ++ "/.git")]}]}]
+            out_index(Arg)
     end.
+
+out_index(Arg) ->
+    HeadSha = gert:get_head_sha(Arg#arg.docroot ++ "/.git"),
+    [{html, [<<"
+<html>
+    <head>
+        <title>El Git</title>
+    </head>
+    <body>
+        <h1>Hello World!</h1>
+        <h2>HEAD: ">>, HeadSha, <<"</h2>
+    </body>
+</html>
+">>]}].
