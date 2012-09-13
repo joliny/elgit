@@ -48,6 +48,17 @@ And (re-)start Yaws.
 Open http://elgit.dev in your browser and enjoy "Hello World!".
 
 
+## External Libraries/Sources
+
+In alphabetical order:
+
+- [Bootstrap](http://twitter.github.com/bootstrap/)
+- [Gert](https://github.com/mneudert/gert/)
+- [jQuery](http://jquery.com/)
+- [libgit2](http://libgit2.github.com/)
+- [Yaws](https://github.com/klacke/yaws/)
+
+
 ## Contributing
 
 Fork El Git on GitHub, make it awesomer (preferably in a topic branch),
