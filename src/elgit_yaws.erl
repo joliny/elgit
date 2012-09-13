@@ -7,12 +7,19 @@
 out(Arg) ->
     Req = Arg#arg.req,
     {abs_path, Path} = Req#http_request.path,
-    if
-        Path /= "/" ->
-            {redirect_local, "/"};
-        true ->
-            out_index(Arg)
+    case re:run(Path, "^/xhr/.*") of
+        {match, _} -> out_xhr(Arg);
+        nomatch ->
+            if
+                Path /= "/" ->
+                    {redirect_local, "/"};
+                true ->
+                    out_index(Arg)
+            end
     end.
+
+out_xhr(Arg) ->
+    [{html, ["{xhrcall:true}"]}].
 
 out_index(Arg) ->
     RepoPath = Arg#arg.docroot ++ "/.git",
