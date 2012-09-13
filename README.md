@@ -1,14 +1,14 @@
-# El GIT
-**GIT Repository Browser in Erlang**
+# El Git
+**Git repository browser in Erlang**
 
-El GIT is a git repository browser written in Erlang. It is based on
+El Git is a git repository browser written in Erlang. It is based on
 [Yaws](https://github.com/klacke/yaws) and
 [Gert](https://github.com/mneudert/gert).
 
 
 ## Installation
 
-Fetch the El GIT repository and make it (fetches dependencies):
+Fetch the El Git repository and make it (fetches dependencies):
 
     $ git clone git://github.com/mneudert/elgit.git
     $ cd gert
@@ -26,6 +26,7 @@ Add the following lines to your yaws.conf:
     <server elgit.dev>
         port = 80
         listen = 0.0.0.0
+        docroot = /path/to/elgit
         appmods = </, elgit_yaws>
     </server>
 
@@ -39,7 +40,7 @@ Open http://elgit.dev in your browser and enjoy "Hello World!".
 
 ## Contributing
 
-Fork El GIT on GitHub, make it awesomer (preferably in a topic branch),
+Fork El Git on GitHub, make it awesomer (preferably in a topic branch),
 send a pull request.
 
 
