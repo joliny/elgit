@@ -16,7 +16,11 @@ Fetch the El Git repository and make it (fetches dependencies):
 
 ### Yaws configuration
 
-Add the following lines to your yaws.conf:
+El Git uses two yaws servers to dish out the content. One is the main server
+sending repository data (http://elgit.dev/) and the other one is used for
+static content (http://static.elgit.dev/).
+
+Adding the following lines to your yaws.conf configures them:
 
     ebin_dir = /path/to/elgit/ebin
     ebin_dir = /path/to/elgit/ebin/gert/ebin
@@ -28,6 +32,12 @@ Add the following lines to your yaws.conf:
         listen = 0.0.0.0
         docroot = /path/to/elgit
         appmods = </, elgit_yaws>
+    </server>
+
+    <server static.elgit.dev>
+        port = 80
+        listen = 0.0.0.0
+        docroot = /path/to/elgit/static
     </server>
 
 And (re-)start Yaws.
