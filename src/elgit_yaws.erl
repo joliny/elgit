@@ -4,18 +4,27 @@
 -include_lib("gert/include/gert.hrl").
 -include_lib("yaws/include/yaws_api.hrl").
 
+get_request_type(xhr, Path) ->
+    case re:run(Path, "^/xhr/.*") of
+        {match, _} ->
+            xhr;
+        nomatch ->
+            notok
+    end.
+
+get_request_type(Path) ->
+    if
+        Path == "/" -> index;
+        true -> get_request_type(xhr, Path)
+    end.
+
 out(Arg) ->
     Req = Arg#arg.req,
     {abs_path, Path} = Req#http_request.path,
-    case re:run(Path, "^/xhr/.*") of
-        {match, _} -> out_xhr(Arg);
-        nomatch ->
-            if
-                Path /= "/" ->
-                    {redirect_local, "/"};
-                true ->
-                    out_index(Arg)
-            end
+    case get_request_type(Path) of
+        xhr -> out_xhr(Arg);
+        index -> out_index(Arg);
+        _ -> {redirect_local, "/"}
     end.
 
 out_xhr(Arg) ->
