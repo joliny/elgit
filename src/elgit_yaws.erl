@@ -4,6 +4,9 @@
 -include_lib("gert/include/gert.hrl").
 -include_lib("yaws/include/yaws_api.hrl").
 
+join([First|Rest], JoinWith) ->
+    lists:flatten([First] ++ [JoinWith ++ X || X <- Rest]).
+
 recursive_re([], _) ->
     nomatch;
 recursive_re([RE|REs], String) ->
@@ -76,7 +79,7 @@ out_xhr_repo_tree(Arg) ->
             out_xhr_invalid(string:substr(Path, 6))
     end.
 out_xhr_repo_tree(Arg, TreeSha, TreePath, TreeEntries) ->
-    TreeEntriesStr = lists:map(fun(E) -> "\"" ++ E ++ "\"," end, TreeEntries),
+    TreeEntriesStr = join(lists:map(fun(E) -> "\"" ++ E ++ "\"" end, TreeEntries), ","),
     [{html, [<<"{\"action\": \"repo_tree\",
                  \"state\": \"ok\",
                  \"tree\": {\"sha\": \"">>, TreeSha, <<"\",
