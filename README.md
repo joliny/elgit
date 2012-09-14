@@ -52,10 +52,13 @@ Open http://elgit.dev in your browser and enjoy "Hello World!".
 
 In alphabetical order:
 
+- [Backbone.js](http://backbonejs.org/)
 - [Bootstrap](http://twitter.github.com/bootstrap/)
 - [Gert](https://github.com/mneudert/gert/)
 - [jQuery](http://jquery.com/)
 - [libgit2](http://libgit2.github.com/)
+- [Lo-Dash](http://lodash.com/)
+- [RequireJS](http://requirejs.org/)
 - [Yaws](https://github.com/klacke/yaws/)
 
 
