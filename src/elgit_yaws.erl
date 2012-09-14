@@ -4,24 +4,24 @@
 -include_lib("gert/include/gert.hrl").
 -include_lib("yaws/include/yaws_api.hrl").
 
-get_request_type(xhr, Path) ->
-    case re:run(Path, "^/xhr/.+") of
-        {match, _} ->
-            xhr;
+recursive_re([], _) ->
+    nomatch;
+recursive_re([RE|REs], String) ->
+    {REAtom, REExp} = RE,
+    case re:run(String, REExp, [{capture, none}]) of
+        match ->
+            REAtom;
         nomatch ->
-            notok
-    end.
-
-get_request_type(Path) ->
-    if
-        Path == "/" -> index;
-        true -> get_request_type(xhr, Path)
+            recursive_re(REs, String)
     end.
 
 out(Arg) ->
     Req = Arg#arg.req,
     {abs_path, Path} = Req#http_request.path,
-    case get_request_type(Path) of
+    ReqTypes = [{index, "^/$"},
+                {xhr, "^/xhr/.+"}],
+    ReqType = recursive_re(ReqTypes, Path),
+    case ReqType of
         xhr -> out_xhr(Arg);
         index -> out_index();
         _ -> {redirect_local, "/"}
@@ -31,9 +31,14 @@ out_xhr(Arg) ->
     Req = Arg#arg.req,
     {abs_path, Path} = Req#http_request.path,
     XhrAction = string:substr(Path, 6),
-    case XhrAction of
-        "repo/init" ->
+    XhrTypes = [{repo_init, "^repo/init$"},
+                {repo_tree, "^repo/tree/[a-z0-9]{40}/.*"}],
+    XhrType = recursive_re(XhrTypes, XhrAction),
+    case XhrType of
+        repo_init ->
             out_xhr_repo_init(Arg);
+        repo_tree ->
+            out_xhr_repo_tree(Arg);
         _ ->
             out_xhr_invalid(XhrAction)
     end.
@@ -56,6 +61,27 @@ out_xhr_repo_init(Arg) ->
                                        \"message\": \"">>, HeadCommitMessage, <<"\",
                                        \"author\": \"">>, HeadCommitAuthor, <<"\",
                                        \"timestamp\": ">>, HeadCommitTimestamp, <<"}}}">>]}].
+
+out_xhr_repo_tree(Arg) ->
+    RepoPath = Arg#arg.docroot ++ "/../.git",
+    Req = Arg#arg.req,
+    {abs_path, Path} = Req#http_request.path,
+    TreeInfo = string:substr(Path, 16),
+    TreeSha = string:substr(TreeInfo, 1, 40),
+    TreePath = string:substr(TreeInfo, 42),
+    case TreePath of
+        "" ->
+            out_xhr_repo_tree(Arg, TreeSha, TreePath, gert:get_tree(RepoPath, TreeSha));
+        _ ->
+            out_xhr_invalid(string:substr(Path, 6))
+    end.
+out_xhr_repo_tree(Arg, TreeSha, TreePath, TreeEntries) ->
+    TreeEntriesStr = lists:map(fun(E) -> "\"" ++ E ++ "\"," end, TreeEntries),
+    [{html, [<<"{\"action\": \"repo_tree\",
+                 \"state\": \"ok\",
+                 \"tree\": {\"sha\": \"">>, TreeSha, <<"\",
+                            \"path\": \"">>, TreePath, <<"\",
+                            \"entries\": [">>, TreeEntriesStr, <<"]}}">>]}].
 
 out_index() ->
     [{html, [<<"
