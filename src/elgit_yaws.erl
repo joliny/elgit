@@ -42,7 +42,7 @@ out_xhr_invalid(XhrAction) ->
     [{html, [<<"{\"action\": \"">>, XhrAction, <<"\", \"state\": \"invalid\"}">>]}].
 
 out_xhr_repo_init(Arg) ->
-    RepoPath = Arg#arg.docroot ++ "/.git",
+    RepoPath = Arg#arg.docroot ++ "/../.git",
     HeadSha = gert:get_head_sha(RepoPath),
     HeadCommit = gert:get_commit_record(RepoPath, HeadSha),
     HeadCommitMessage = re:replace(re:replace(HeadCommit#commit.message,
@@ -58,15 +58,15 @@ out_xhr_repo_init(Arg) ->
                                        \"timestamp\": ">>, HeadCommitTimestamp, <<"}}}">>]}].
 
 out_index(Arg) ->
-    RepoPath = Arg#arg.docroot ++ "/.git",
+    RepoPath = Arg#arg.docroot ++ "/../.git",
     HeadSha = gert:get_head_sha(RepoPath),
     HeadCommit = gert:get_commit_record(RepoPath, HeadSha),
     HeadCommitMessage = HeadCommit#commit.message,
     [{html, [<<"
 <html>
     <head>
-        <link href=\"http://static.elgit.dev/css/bootstrap.css\" rel=\"stylesheet\"/>
-        <link href=\"http://static.elgit.dev/css/bootstrap-responsive.css\" rel=\"stylesheet\">
+        <link href=\"/css/bootstrap.css\" rel=\"stylesheet\"/>
+        <link href=\"/css/bootstrap-responsive.css\" rel=\"stylesheet\">
         <title>El Git</title>
     </head>
     <body>
@@ -82,8 +82,10 @@ out_index(Arg) ->
         <h1>Hello World!</h1>
         <h2>">>, HeadCommitMessage, <<" @ ">>, HeadSha, <<"</h2>
 
-        <script src=\"http://static.elgit.dev/js/jquery.js\"></script>
-        <script src=\"http://static.elgit.dev/js/bootstrap.js\"></script>
+        <div id=\"page\"></div>
+
+        <script data-main=\"/js/elgit.js\"
+                src=\"/js/lib/require.js\"></script>
     </body>
 </html>
 ">>]}].
