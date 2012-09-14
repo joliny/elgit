@@ -23,7 +23,7 @@ out(Arg) ->
     {abs_path, Path} = Req#http_request.path,
     case get_request_type(Path) of
         xhr -> out_xhr(Arg);
-        index -> out_index(Arg);
+        index -> out_index();
         _ -> {redirect_local, "/"}
     end.
 
@@ -57,11 +57,7 @@ out_xhr_repo_init(Arg) ->
                                        \"author\": \"">>, HeadCommitAuthor, <<"\",
                                        \"timestamp\": ">>, HeadCommitTimestamp, <<"}}}">>]}].
 
-out_index(Arg) ->
-    RepoPath = Arg#arg.docroot ++ "/../.git",
-    HeadSha = gert:get_head_sha(RepoPath),
-    HeadCommit = gert:get_commit_record(RepoPath, HeadSha),
-    HeadCommitMessage = HeadCommit#commit.message,
+out_index() ->
     [{html, [<<"
 <html>
     <head>
@@ -78,9 +74,6 @@ out_index(Arg) ->
                 </ul>
             </div>
         </div>
-
-        <h1>Hello World!</h1>
-        <h2>">>, HeadCommitMessage, <<" @ ">>, HeadSha, <<"</h2>
 
         <div id=\"page\"></div>
 
