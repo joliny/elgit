@@ -1,6 +1,20 @@
-<h2>Tree</h2>
+<h2>Trees</h2>
 <ul>
-    <% _.each(entries, function(entry) { %>
-    <li><%= entry %></li>
+    <% _.each(entries.trees, function(tree) { %>
+    <li><%= tree %></li>
+    <% }); %>
+</ul>
+
+<h2>Blobs</h2>
+<ul>
+    <% _.each(entries.blobs, function(blob) { %>
+    <li><%= blob %></li>
+    <% }); %>
+</ul>
+
+<h2>Submodules</h2>
+<ul>
+    <% _.each(entries.submodules, function(submodule) { %>
+    <li><%= tree %></li>
     <% }); %>
 </ul>

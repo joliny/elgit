@@ -4,26 +4,44 @@
 -include_lib("gert/include/gert.hrl").
 -include_lib("yaws/include/yaws_api.hrl").
 
+
+%%%
+%   helper methods
+%%%
+join([], _) ->
+    "";
 join([First|Rest], JoinWith) ->
     lists:flatten([First] ++ [JoinWith ++ X || X <- Rest]).
 
-recursive_re([], _) ->
+list_match([], _) ->
     nomatch;
-recursive_re([RE|REs], String) ->
+list_match([RE|REs], String) ->
     {REAtom, REExp} = RE,
     case re:run(String, REExp, [{capture, none}]) of
         match ->
             REAtom;
         nomatch ->
-            recursive_re(REs, String)
+            list_match(REs, String)
     end.
 
+list_replace([], String) ->
+    String;
+list_replace([RE|REs], String) ->
+    Match = element(1, RE),
+    Replace = element(2, RE),
+    Options = element(3, RE),
+    re:replace(list_replace(REs, String), Match, Replace, Options).
+
+
+%%%
+%   request methods
+%%%
 out(Arg) ->
     Req = Arg#arg.req,
     {abs_path, Path} = Req#http_request.path,
     ReqTypes = [{index, "^/$"},
                 {xhr, "^/xhr/.+"}],
-    ReqType = recursive_re(ReqTypes, Path),
+    ReqType = list_match(ReqTypes, Path),
     case ReqType of
         xhr -> out_xhr(Arg);
         index -> out_index();
@@ -36,7 +54,7 @@ out_xhr(Arg) ->
     XhrAction = string:substr(Path, 6),
     XhrTypes = [{repo_init, "^repo/init$"},
                 {repo_tree, "^repo/tree/[a-z0-9]{40}/.*"}],
-    XhrType = recursive_re(XhrTypes, XhrAction),
+    XhrType = list_match(XhrTypes, XhrAction),
     case XhrType of
         repo_init ->
             out_xhr_repo_init(Arg);
@@ -51,16 +69,17 @@ out_xhr_invalid(XhrAction) ->
 
 out_xhr_repo_init(Arg) ->
     RepoPath = Arg#arg.docroot ++ "/../.git",
-    HeadSha = gert:get_head_sha(RepoPath),
-    HeadCommit = gert:get_commit_record(RepoPath, HeadSha),
-    HeadCommitMessage = re:replace(re:replace(HeadCommit#commit.message,
-                                              "\"", "\\\\\"", [global]),
-                                   "\n$", "", [global]),
+    HeadCommit = gert:get_commit_record(RepoPath, "refs/heads/master"),
+    HeadCommitOid = HeadCommit#commit.oid,
+    HeadCommitMessage = list_replace([{"\"", "\\\\\"", [global]},
+                                      {"\r", "", [global]},
+                                      {"\n$", "", [global]},
+                                      {"\n", "\\\\n", [global]}], HeadCommit#commit.message),
     HeadCommitAuthor = re:replace(HeadCommit#commit.author, "\"", "\\\\\"", [global]),
     HeadCommitTimestamp = list_to_binary(integer_to_list(HeadCommit#commit.timestamp)),
     [{html, [<<"{\"action\": \"repo_init\",
                  \"state\": \"ok\",
-                 \"repo\": {\"HEAD\": {\"sha\": \"">>, HeadSha, <<"\",
+                 \"repo\": {\"HEAD\": {\"oid\": \"">>, HeadCommitOid, <<"\",
                                        \"message\": \"">>, HeadCommitMessage, <<"\",
                                        \"author\": \"">>, HeadCommitAuthor, <<"\",
                                        \"timestamp\": ">>, HeadCommitTimestamp, <<"}}}">>]}].
@@ -70,21 +89,23 @@ out_xhr_repo_tree(Arg) ->
     Req = Arg#arg.req,
     {abs_path, Path} = Req#http_request.path,
     TreeInfo = string:substr(Path, 16),
-    TreeSha = string:substr(TreeInfo, 1, 40),
+    TreeOid = string:substr(TreeInfo, 1, 40),
     TreePath = string:substr(TreeInfo, 42),
-    case TreePath of
-        "" ->
-            out_xhr_repo_tree(Arg, TreeSha, TreePath, gert:get_tree(RepoPath, TreeSha));
-        _ ->
-            out_xhr_invalid(string:substr(Path, 6))
-    end.
-out_xhr_repo_tree(Arg, TreeSha, TreePath, TreeEntries) ->
-    TreeEntriesStr = join(lists:map(fun(E) -> "\"" ++ E ++ "\"" end, TreeEntries), ","),
+    out_xhr_repo_tree(Arg, TreeOid, TreePath, gert:get_tree(RepoPath, TreeOid, TreePath)).
+out_xhr_repo_tree(Arg, TreeOid, TreePath, TreeEntries) ->
+    TreeTreeEntries = [L || {tree, _} = L <- TreeEntries],
+    TreeBlobEntries = [L || {blob, _} = L <- TreeEntries],
+    TreeSubmoduleEntries = [L || {submodule, _} = L <- TreeEntries],
+    TreeTrees = join(lists:map(fun(E) -> "\"" ++ element(2, E) ++ "\"" end, TreeTreeEntries), ","),
+    TreeBlobs = join(lists:map(fun(E) -> "\"" ++ element(2, E) ++ "\"" end, TreeBlobEntries), ","),
+    TreeSubmodules = join(lists:map(fun(E) -> "\"" ++ element(2, E) ++ "\"" end, TreeSubmoduleEntries), ","),
     [{html, [<<"{\"action\": \"repo_tree\",
                  \"state\": \"ok\",
-                 \"tree\": {\"sha\": \"">>, TreeSha, <<"\",
+                 \"tree\": {\"oid\": \"">>, TreeOid, <<"\",
                             \"path\": \"">>, TreePath, <<"\",
-                            \"entries\": [">>, TreeEntriesStr, <<"]}}">>]}].
+                            \"entries\": {\"trees\": [">>, TreeTrees, <<"],
+                                          \"blobs\": [">>, TreeBlobs, <<"],
+                                          \"submodules\": [">>, TreeSubmodules, <<"]}}}">>]}].
 
 out_index() ->
     [{html, [<<"

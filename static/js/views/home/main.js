@@ -28,7 +28,7 @@ define([
         },
 
         renderRepo: function(repo) {
-            var data = {repoHeadSha: repo.HEAD.sha,
+            var data = {repoHeadOid: repo.HEAD.oid,
                         repoHeadMessage: repo.HEAD.message,
                         repoHeadAuthor: repo.HEAD.author,
                         repoHeadTimestamp: repo.HEAD.timestamp};
@@ -39,7 +39,7 @@ define([
             var view = this;
 
             $.ajax({
-                url: "/xhr/repo/tree/" + repo.HEAD.sha + "/",
+                url: "/xhr/repo/tree/" + repo.HEAD.oid + "/",
                 dataType: 'json',
                 success: function(resp) {
                     if (resp && resp.state && 'ok' == resp.state) {
