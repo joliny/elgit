@@ -1,8 +1,8 @@
 -module(elgit_yaws).
 -export ([out/1]).
 
--include_lib("gert/include/gert.hrl").
--include_lib("yaws/include/yaws_api.hrl").
+-include_lib("gert.hrl").
+-include_lib("yaws_api.hrl").
 
 
 %%%
