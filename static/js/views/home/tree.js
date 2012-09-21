@@ -9,7 +9,7 @@ define([
             var view = this;
 
             $.ajax({
-                url: "/xhr/repo/tree/" + repo.HEAD.oid + "/",
+                url: "/xhr/repo/elgit/tree/" + repo.HEAD.oid + "/",
                 dataType: 'json',
                 success: function(resp) {
                     if (resp && resp.state && 'ok' == resp.state) {

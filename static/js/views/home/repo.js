@@ -10,7 +10,7 @@ define([
             var view = this;
 
             $.ajax({
-                url: "/xhr/repo/init",
+                url: "/xhr/repo/elgit/init",
                 dataType: 'json',
                 success: function(resp) {
                     if (resp && resp.state && 'ok' == resp.state) {

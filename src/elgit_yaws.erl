@@ -4,6 +4,24 @@
 -include_lib("gert.hrl").
 -include_lib("yaws_api.hrl").
 
+%%%
+%   repository list
+%%%
+get_repo(Arg, XhrAction) ->
+    RepoList = [{"elgit", Arg#arg.docroot ++ "/../.git"},
+                {"gert",  Arg#arg.docroot ++ "/../deps/gert/.git"}],
+    get_repo_match(RepoList, XhrAction).
+
+get_repo_match([], _) ->
+    nomatch;
+get_repo_match([Repo|RepoList], XhrAction) ->
+    RERepo = "^/repo/" ++ element(1, Repo) ++ "/.+",
+    case re:run(XhrAction, RERepo, [{capture, none}]) of
+        match ->
+            Repo;
+        nomatch ->
+            get_repo_match(RepoList, XhrAction)
+    end.
 
 %%%
 %   helper methods
@@ -51,24 +69,39 @@ out(Arg) ->
 out_xhr(Arg) ->
     Req = Arg#arg.req,
     {abs_path, Path} = Req#http_request.path,
-    XhrAction = string:substr(Path, 6),
-    XhrTypes = [{repo_init, "^repo/init$"},
-                {repo_tree, "^repo/tree/[a-z0-9]{40}/.*"}],
-    XhrType = list_match(XhrTypes, XhrAction),
-    case XhrType of
-        repo_init ->
-            out_xhr_repo_init(Arg);
-        repo_tree ->
-            out_xhr_repo_tree(Arg);
+    XhrAction = string:substr(Path, 5), % strip "/xhr"
+    XhrRepo = get_repo(Arg, XhrAction),
+    case XhrRepo of
+        {_, _} ->
+            RepoName = element(1, XhrRepo),
+            RepoPath = element(2, XhrRepo),
+            XhrRepoAction = string:substr(XhrAction, 7 + string:len(RepoName)), % strip "/repo/[RepoName]"
+            out_xhr_repo(Arg, RepoPath, XhrRepoAction);
         _ ->
-            out_xhr_invalid(XhrAction)
+            out_xhr_invalid(Arg)
     end.
 
-out_xhr_invalid(XhrAction) ->
+out_xhr_repo(Arg, RepoPath, XhrRepoAction) ->
+    XhrTypes = [{repo_init, "^/init$"},
+                {repo_tree, "^/tree/[a-z0-9]{40}/.*"}],
+    XhrType = list_match(XhrTypes, XhrRepoAction),
+    case XhrType of
+        repo_init ->
+            out_xhr_repo_init(RepoPath);
+       repo_tree ->
+            XhrTreeAction = string:substr(XhrRepoAction, 7), % strip "/tree/"
+           out_xhr_repo_tree(RepoPath, XhrTreeAction);
+       _ ->
+           out_xhr_invalid(Arg)
+    end.
+
+out_xhr_invalid(Arg) ->
+    Req = Arg#arg.req,
+    {abs_path, Path} = Req#http_request.path,
+    XhrAction = string:substr(Path, 6), % strip "/xhr/"
     [{html, [<<"{\"action\": \"">>, XhrAction, <<"\", \"state\": \"invalid\"}">>]}].
 
-out_xhr_repo_init(Arg) ->
-    RepoPath = Arg#arg.docroot ++ "/../.git",
+out_xhr_repo_init(RepoPath) ->
     HeadCommit = gert:get_commit_record(RepoPath, "refs/heads/master"),
     HeadCommitOid = HeadCommit#commit.oid,
     HeadCommitMessage = list_replace([{"\"", "\\\\\"", [global]},
@@ -84,15 +117,11 @@ out_xhr_repo_init(Arg) ->
                                        \"author\": \"">>, HeadCommitAuthor, <<"\",
                                        \"timestamp\": ">>, HeadCommitTimestamp, <<"}}}">>]}].
 
-out_xhr_repo_tree(Arg) ->
-    RepoPath = Arg#arg.docroot ++ "/../.git",
-    Req = Arg#arg.req,
-    {abs_path, Path} = Req#http_request.path,
-    TreeInfo = string:substr(Path, 16),
-    TreeOid = string:substr(TreeInfo, 1, 40),
-    TreePath = string:substr(TreeInfo, 42),
-    out_xhr_repo_tree(Arg, TreeOid, TreePath, gert:get_tree(RepoPath, TreeOid, TreePath)).
-out_xhr_repo_tree(Arg, TreeOid, TreePath, TreeEntries) ->
+out_xhr_repo_tree(RepoPath, XhrTreeAction) ->
+    TreeOid = string:substr(XhrTreeAction, 1, 40),
+    TreePath = string:substr(XhrTreeAction, 42),
+    out_xhr_repo_tree(TreeOid, TreePath, gert:get_tree(RepoPath, TreeOid, TreePath)).
+out_xhr_repo_tree(TreeOid, TreePath, TreeEntries) ->
     TreeTreeEntries = [L || {tree, _} = L <- TreeEntries],
     TreeBlobEntries = [L || {blob, _} = L <- TreeEntries],
     TreeSubmoduleEntries = [L || {submodule, _} = L <- TreeEntries],
