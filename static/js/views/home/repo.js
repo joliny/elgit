@@ -9,8 +9,10 @@ define([
         render: function() {
             var view = this;
 
+            var repo = document.location.pathname.split(/\//)[1];
+
             $.ajax({
-                url: "/xhr/repo/elgit/init",
+                url: "/xhr/repo/" + repo + "/init",
                 dataType: 'json',
                 success: function(resp) {
                     if (resp && resp.state && 'ok' == resp.state) {

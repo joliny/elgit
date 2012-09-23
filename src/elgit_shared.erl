@@ -1,5 +1,5 @@
 -module(elgit_shared).
--export ([
+-export([
     join/2,
     get_repo/2,
     list_match/2,
@@ -19,7 +19,7 @@ get_repo(Arg, XhrAction) ->
 get_repo_match([], _) ->
     nomatch;
 get_repo_match([Repo|RepoList], XhrAction) ->
-    RERepo = "^/repo/" ++ element(1, Repo) ++ "/.+",
+    RERepo = "^" ++ element(1, Repo) ++ "/.*",
     case re:run(XhrAction, RERepo, [{capture, none}]) of
         match ->
             Repo;

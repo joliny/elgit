@@ -1,5 +1,5 @@
 -module(elgit_yaws).
--export ([out/1]).
+-export([out/1]).
 
 -include_lib("gert.hrl").
 -include_lib("yaws_api.hrl").
@@ -11,36 +11,22 @@ out(Arg) ->
     Req = Arg#arg.req,
     {abs_path, Path} = Req#http_request.path,
     ReqTypes = [{index, "^/$"},
-                {xhr, "^/xhr/.+"}],
+                {xhr, "^/xhr/.+"},
+                {repo, "^/[[:alnum:]-]+/.*"}],
     ReqType = elgit_shared:list_match(ReqTypes, Path),
     case ReqType of
+        index -> out_index(Arg);
         xhr -> elgit_xhr:out(Arg);
-        index -> out_index();
+        repo -> elgit_repo:out(Arg);
         _ -> {redirect_local, "/"}
     end.
 
-out_index() ->
-    [{html, [<<"
-<html>
-    <head>
-        <link href=\"/css/bootstrap.css\" rel=\"stylesheet\"/>
-        <link href=\"/css/bootstrap-responsive.css\" rel=\"stylesheet\">
-        <title>El Git</title>
-    </head>
-    <body>
-        <div class=\"navbar\">
-            <div class=\"navbar-inner\">
-                <span class=\"brand\" href=\"#\">El Git</span>
-                <ul class=\"nav\">
-                    <li class=\"active\"><a href=\"#\">Home</a></li>
-                </ul>
-            </div>
-        </div>
-
-        <div id=\"page\"></div>
-
-        <script data-main=\"/js/elgit.js\"
-                src=\"/js/lib/require.js\"></script>
-    </body>
-</html>
-">>]}].
+out_index(Arg) ->
+    [elgit_www:header(Arg),
+     {html, [<<"
+<ul>
+    <li><a href=\"/gert/\">Gert</a></li>
+    <li><a href=\"/elgit/\">Elgit</a></li>
+</ul>
+">>]},
+     elgit_www:footer(Arg)].
