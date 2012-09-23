@@ -11,9 +11,9 @@ out(Arg) ->
     Req = Arg#arg.req,
     {abs_path, Path} = Req#http_request.path,
     XhrAction = string:substr(Path, 11), % strip "/xhr/repo/"
-    XhrRepo = elgit_shared:get_repo(Arg, XhrAction),
+    XhrRepo = elgit_shared:get_repo(XhrAction),
     case XhrRepo of
-        {_, _} ->
+        {_, _, _} ->
             XhrRepoAction = string:substr(XhrAction, 2 + string:len(element(1, XhrRepo))), % strip "[RepoName]/"
             out_xhr_repo(Arg, XhrRepo, XhrRepoAction);
         _ ->
@@ -26,11 +26,11 @@ out_xhr_repo(Arg, XhrRepo, XhrRepoAction) ->
     XhrType = elgit_shared:list_match(XhrTypes, XhrRepoAction),
     case XhrType of
         repo_init ->
-            out_xhr_repo_init(XhrRepo);
-       repo_tree ->
+            out_xhr_repo_init(Arg, XhrRepo);
+        repo_tree ->
             XhrTreeAction = string:substr(XhrRepoAction, 6), % strip "tree/"
-           out_xhr_repo_tree(XhrRepo, XhrTreeAction);
-       _ ->
+           out_xhr_repo_tree(Arg, XhrRepo, XhrTreeAction);
+        _ ->
            out_xhr_invalid(Arg)
     end.
 
@@ -40,8 +40,8 @@ out_xhr_invalid(Arg) ->
     XhrAction = string:substr(Path, 6), % strip "/xhr/"
     [{html, [<<"{\"action\": \"">>, XhrAction, <<"\", \"state\": \"invalid\"}">>]}].
 
-out_xhr_repo_init(XhrRepo) ->
-    HeadCommit = gert:get_commit_record(element(2, XhrRepo), "refs/heads/master"),
+out_xhr_repo_init(Arg, XhrRepo) ->
+    HeadCommit = gert:get_commit_record(Arg#arg.docroot ++ element(3, XhrRepo), "refs/heads/master"),
     HeadCommitOid = HeadCommit#commit.oid,
     HeadCommitMessage = elgit_shared:list_replace([{"\"", "\\\\\"", [global]},
                                                    {"\r", "", [global]},
@@ -57,11 +57,10 @@ out_xhr_repo_init(XhrRepo) ->
                                        \"author\": \"">>, HeadCommitAuthor, <<"\",
                                        \"timestamp\": ">>, HeadCommitTimestamp, <<"}}}">>]}].
 
-out_xhr_repo_tree(XhrRepo, XhrTreeAction) ->
+out_xhr_repo_tree(Arg, XhrRepo, XhrTreeAction) ->
     TreeOid = string:substr(XhrTreeAction, 1, 40),
     TreePath = string:substr(XhrTreeAction, 42),
-    out_xhr_repo_tree(TreeOid, TreePath, gert:get_tree(element(2, XhrRepo), TreeOid, TreePath)).
-out_xhr_repo_tree(TreeOid, TreePath, TreeEntries) ->
+    TreeEntries = gert:get_tree(Arg#arg.docroot ++ element(3, XhrRepo), TreeOid, TreePath),
     TreeTreeEntries = [L || {tree, _} = L <- TreeEntries],
     TreeBlobEntries = [L || {blob, _} = L <- TreeEntries],
     TreeSubmoduleEntries = [L || {submodule, _} = L <- TreeEntries],

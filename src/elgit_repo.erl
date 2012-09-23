@@ -16,7 +16,7 @@ out(Arg) ->
 out_partial(Arg) ->
     Req = Arg#arg.req,
     {abs_path, Path} = Req#http_request.path,
-    Repo = elgit_shared:get_repo(Arg, string:substr(Path, 2)),
+    Repo = elgit_shared:get_repo(string:substr(Path, 2)),
     {html, [<<"
 <script data-main=\"/js/elgit.js\" src=\"/js/lib/require.js\"></script>
 ">>]}.

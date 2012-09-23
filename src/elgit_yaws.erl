@@ -23,10 +23,11 @@ out(Arg) ->
 
 out_index(Arg) ->
     [elgit_www:header(Arg),
-     {html, [<<"
-<ul>
-    <li><a href=\"/gert/\">Gert</a></li>
-    <li><a href=\"/elgit/\">Elgit</a></li>
-</ul>
-">>]},
+     {html, [get_repo_links(elgit_shared:get_repo_list())]},
      elgit_www:footer(Arg)].
+
+get_repo_links([]) ->
+    [];
+get_repo_links([Repo|RepoList]) ->
+    [<<"<a href=\"/">>, element(1, Repo), <<"/\" class=\"btn\">">>,
+     element(2, Repo), <<"</a>">>] ++ get_repo_links(RepoList).

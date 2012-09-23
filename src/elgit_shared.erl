@@ -1,7 +1,8 @@
 -module(elgit_shared).
 -export([
     join/2,
-    get_repo/2,
+    get_repo/1,
+    get_repo_list/0,
     list_match/2,
     list_replace/2
 ]).
@@ -11,10 +12,15 @@
 %%%
 %   repository list
 %%%
-get_repo(Arg, XhrAction) ->
-    RepoList = [{"elgit", Arg#arg.docroot ++ "/../.git"},
-                {"gert",  Arg#arg.docroot ++ "/../deps/gert/.git"}],
-    get_repo_match(RepoList, XhrAction).
+get_repo_list() ->
+    % 1. slug
+    % 2. Name
+    % 3. path relative to docroot
+    [{"elgit", "El Git", "/../.git"},
+     {"gert", "Gert", "/../deps/gert/.git"}].
+
+get_repo(XhrAction) ->
+    get_repo_match(get_repo_list(), XhrAction).
 
 get_repo_match([], _) ->
     nomatch;
