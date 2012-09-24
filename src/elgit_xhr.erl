@@ -8,8 +8,7 @@
 %   request methods
 %%%
 out(Arg) ->
-    Req = Arg#arg.req,
-    {abs_path, Path} = Req#http_request.path,
+    Path = (yaws_api:request_url(Arg))#url.path,
     XhrAction = string:substr(Path, 11), % strip "/xhr/repo/"
     XhrRepo = elgit_shared:get_repo(XhrAction),
     case XhrRepo of
@@ -35,8 +34,7 @@ out_xhr_repo(Arg, XhrRepo, XhrRepoAction) ->
     end.
 
 out_xhr_invalid(Arg) ->
-    Req = Arg#arg.req,
-    {abs_path, Path} = Req#http_request.path,
+    Path = (yaws_api:request_url(Arg))#url.path,
     XhrAction = string:substr(Path, 6), % strip "/xhr/"
     [{html, [<<"{\"action\": \"">>, XhrAction, <<"\", \"state\": \"invalid\"}">>]}].
 

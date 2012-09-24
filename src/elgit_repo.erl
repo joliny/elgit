@@ -4,21 +4,19 @@
 -include_lib("yaws_api.hrl").
 
 out(Arg) ->
-    case yaws_api:queryvar(Arg, "partial") of
-        {ok, _} ->
-            out_partial(Arg);
-        undefined ->
+    case elgit_shared:is_partial(Arg) of
+        false ->
             [elgit_www:header(Arg),
              out_partial(Arg),
-             elgit_www:footer(Arg)]
+             elgit_www:footer(Arg)];
+         true ->
+            out_partial(Arg)
     end.
 
 out_partial(Arg) ->
-    Req = Arg#arg.req,
-    {abs_path, Path} = Req#http_request.path,
-    RequestPath = lists:nth(1, re:split(Path, "[\?]", [{return, list}])),
-    Repo = elgit_shared:get_repo(string:substr(RequestPath, 2)),
-    ActionPath = string:substr(RequestPath, 2 + string:len(element(1, Repo))),
+    Path = (yaws_api:request_url(Arg))#url.path,
+    Repo = elgit_shared:get_repo(string:substr(Path, 2)),
+    ActionPath = string:substr(Path, 2 + string:len(element(1, Repo))),
     RepoActions = [{tree, "^/tree/.*"},
                    {index, "^/$"}],
     RepoAction = elgit_shared:list_match(RepoActions, ActionPath),

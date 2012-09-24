@@ -8,8 +8,7 @@
 %   request methods
 %%%
 out(Arg) ->
-    Req = Arg#arg.req,
-    {abs_path, Path} = Req#http_request.path,
+    Path = (yaws_api:request_url(Arg))#url.path,
     ReqTypes = [{index, "^/$"},
                 {xhr, "^/xhr/.+"},
                 {repo, "^/[[:alnum:]-]+/.*"}],

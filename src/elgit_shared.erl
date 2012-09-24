@@ -3,6 +3,7 @@
     join/2,
     get_repo/1,
     get_repo_list/0,
+    is_partial/1,
     list_match/2,
     list_replace/2
 ]).
@@ -40,6 +41,14 @@ join([], _) ->
     "";
 join([First|Rest], JoinWith) ->
     lists:flatten([First] ++ [JoinWith ++ X || X <- Rest]).
+
+is_partial(Arg) ->
+    case yaws_api:queryvar(Arg, "partial") of
+        {ok, _} ->
+            true;
+        undefined ->
+            false
+    end.
 
 list_match([], _) ->
     nomatch;
