@@ -41,10 +41,10 @@ out_xhr_invalid(Arg) ->
 out_xhr_repo_init(Arg, XhrRepo) ->
     HeadCommit = gert:get_commit_record(Arg#arg.docroot ++ element(3, XhrRepo), "refs/heads/master"),
     HeadCommitOid = HeadCommit#commit.oid,
-    HeadCommitMessage = elgit_shared:list_replace([{"\"", "\\\\\"", [global]},
-                                                   {"\r", "", [global]},
+    HeadCommitMessage = elgit_shared:list_replace([{"\n", "\\\\n", [global]},
                                                    {"\n$", "", [global]},
-                                                   {"\n", "\\\\n", [global]}], HeadCommit#commit.message),
+                                                   {"\r", "", [global]},
+                                                   {"\"", "\\\\\"", [global]}], HeadCommit#commit.message),
     HeadCommitAuthor = re:replace(HeadCommit#commit.author, "\"", "\\\\\"", [global]),
     HeadCommitTimestamp = list_to_binary(integer_to_list(HeadCommit#commit.timestamp)),
     [{html, [<<"{\"action\": \"repo_init\",
