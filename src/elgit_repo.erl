@@ -51,7 +51,7 @@ header_select_branch([Branch|Branches]) ->
      re:replace(Branch, "refs/heads/", ""),
      <<"</option>">>] ++ header_select_branch(Branches).
 
-footer(Arg) ->
+footer(_Arg) ->
     {html, [<<"</div>">>]}.
 
 repo_header(Arg, Repo, CommitOid) ->
@@ -83,6 +83,50 @@ tree(Arg, ActionPath, Repo) ->
             {redirect_local, "/"}
     end.
 
+tree_crumb(Repo, TreeOid, TreePath) ->
+    TreeCrumbs = re:split(TreePath, "/", [{return, list}]),
+    {html, [<<"
+<ul id=\"tree-crumb\">
+    ">>,
+        tree_crumb_root(Repo, TreeOid),
+        tree_crumb_entries(Repo, TreeOid, [], TreeCrumbs),
+    <<"
+</ul>
+    ">>]}.
+
+tree_crumb_root(Repo, TreeOid) ->
+    [<<"
+<li>
+    <a href=\"/">>, element(1, Repo), <<"/tree/">>,
+                    TreeOid, <<"/\">">>,
+                    element(1, Repo), <<"</a>
+</li>
+    ">>].
+
+tree_crumb_entry(Repo, TreeOid, TreeLink, TreeCrumb) ->
+    [<<"
+<li>
+    <a href=\"/">>, element(1, Repo), <<"/tree/">>,
+                    TreeOid, <<"/">>,
+                    TreeLink, <<"/\">">>,
+                    TreeCrumb, <<"</a>
+</li>
+    ">>].
+
+tree_crumb_entries(_Repo, _TreeOid, _TreePath, []) ->
+    [];
+tree_crumb_entries(Repo, TreeOid, TreePath, [[]|TreeCrumbs]) ->
+    tree_crumb_entries(Repo, TreeOid, TreePath, TreeCrumbs); % ignore "empty" matches from string split
+tree_crumb_entries(Repo, TreeOid, TreePath, [TreeCrumb|TreeCrumbs]) ->
+    case TreePath of
+        [] ->
+            TreeLink = TreeCrumb;
+        _ ->
+            TreeLink = elgit_shared:join([TreePath, TreeCrumb], "/")
+    end,
+    [tree_crumb_entry(Repo, TreeOid, TreeLink, TreeCrumb),
+     tree_crumb_entries(Repo, TreeOid, [TreePath, TreeCrumb], TreeCrumbs)].
+
 tree_partial(Arg, Repo, TreeOid, TreePath) ->
     RepoPath = Arg#arg.docroot ++ element(3, Repo),
     BranchList = gert:get_branches(RepoPath),
@@ -97,9 +141,11 @@ tree_partial(Arg, Repo, TreeOid, TreePath) ->
     case TreePath of
         [] ->
             [repo_header(Arg, Repo, CommitOid),
+             tree_crumb(Repo, TreeOid, TreePath),
              tree_entries(Arg, Repo, TreeOid, CommitOid, TreePath)];
         _ ->
-            [tree_entries(Arg, Repo, TreeOid, CommitOid, TreePath)]
+            [tree_crumb(Repo, TreeOid, TreePath),
+             tree_entries(Arg, Repo, TreeOid, CommitOid, TreePath)]
     end.
 
 tree_entries(Arg, Repo, TreeOid, CommitOid, TreePath) ->

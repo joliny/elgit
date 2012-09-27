@@ -6,14 +6,14 @@
 
 -include_lib("yaws_api.hrl").
 
-footer(Arg) ->
+footer(_Arg) ->
     [{html, [<<"
         </div>
     </body>
 </html>
     ">>]}].
 
-header(Arg) ->
+header(_Arg) ->
     [{html, [<<"
 <html>
     <head>
