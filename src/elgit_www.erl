@@ -11,7 +11,7 @@ footer(Arg) ->
         </div>
     </body>
 </html>
-">>]}].
+    ">>]}].
 
 header(Arg) ->
     [{html, [<<"
@@ -31,4 +31,5 @@ header(Arg) ->
             </div>
         </div>
 
-        <div id=\"page\">">>]}].
+        <div id=\"page\">
+    ">>]}].
