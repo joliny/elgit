@@ -42,7 +42,8 @@ header(Arg) ->
     <div id=\"repo-head\">
         Branches:
         <select>">>, header_select_branch(BranchList), <<"</select>
-    </div>">>]}.
+    </div>
+    ">>]}.
 
 header_select_branch([]) ->
     [];
