@@ -20,8 +20,8 @@ repo_add(Repo) ->
 repo_by_slug(Slug) ->
     F = fun() ->
         case mnesia:read({elgit_repo, Slug}) of
-            [#elgit_repo{name = N, path = P}] ->
-                {Slug, N, P};
+            [#elgit_repo{slug=Slug, name = N, path = P}] ->
+                #elgit_repo{slug = Slug, name = N, path = P};
             [] ->
                 undefined
         end

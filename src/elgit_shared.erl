@@ -8,17 +8,22 @@
     list_replace/2
 ]).
 
+-include_lib("elgit_records.hrl").
 -include_lib("yaws_api.hrl").
 
 %%%
 %   repository list
 %%%
 get_repo_list() ->
-    % 1. slug
-    % 2. Name
-    % 3. path relative to docroot
-    [{"elgit", "El Git", "/../.git"},
-     {"gert", "Gert", "/../deps/gert/.git"}].
+    F = fun() ->
+        case mnesia:all_keys(elgit_repo) of
+            [] ->
+                [];
+            RepoList ->
+                lists:map(fun(R) -> elgit_db:repo_by_slug(R) end, RepoList)
+        end
+    end,
+    mnesia:activity(transaction, F).
 
 get_repo(XhrAction) ->
     get_repo_match(get_repo_list(), XhrAction).
@@ -26,7 +31,7 @@ get_repo(XhrAction) ->
 get_repo_match([], _) ->
     nomatch;
 get_repo_match([Repo|RepoList], XhrAction) ->
-    RERepo = "^" ++ element(1, Repo) ++ "/.*",
+    RERepo = "^" ++ Repo#elgit_repo.slug ++ "/.*",
     case re:run(XhrAction, RERepo, [{capture, none}]) of
         match ->
             Repo;

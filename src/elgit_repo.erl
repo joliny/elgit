@@ -1,6 +1,7 @@
 -module(elgit_repo).
 -export([out/1]).
 
+-include_lib("elgit_records.hrl").
 -include_lib("gert.hrl").
 -include_lib("yaws_api.hrl").
 
@@ -19,15 +20,15 @@ out(Arg) ->
 out_partial(Arg) ->
     Path = (yaws_api:request_url(Arg))#url.path,
     Repo = elgit_shared:get_repo(string:substr(Path, 2)),
-    ActionPath = string:substr(Path, 2 + string:len(element(1, Repo))),
+    ActionPath = string:substr(Path, 2 + string:len(Repo#elgit_repo.slug)),
     RepoActions = [{tree, "^/tree/.*"},
                    {index, "^/$"}],
     RepoAction = elgit_shared:list_match(RepoActions, ActionPath),
     case RepoAction of
         tree ->
-            tree(Arg, ActionPath, Repo);
+            tree(ActionPath, Repo);
         index ->
-            tree(Arg, "/tree/master/", Repo);
+            tree("/tree/master/", Repo);
         _ ->
             {redirect_local, "/"}
     end.
@@ -35,8 +36,7 @@ out_partial(Arg) ->
 header(Arg) ->
     Path = (yaws_api:request_url(Arg))#url.path,
     Repo = elgit_shared:get_repo(string:substr(Path, 2)),
-    RepoPath = Arg#arg.docroot ++ element(3, Repo),
-    BranchList = gert:get_branches(RepoPath),
+    BranchList = gert:get_branches(Repo#elgit_repo.path),
     {html, [<<"
 <div id=\"repo\">
     <div id=\"repo-head\">
@@ -55,9 +55,8 @@ header_select_branch([Branch|Branches]) ->
 footer(_Arg) ->
     {html, [<<"</div>">>]}.
 
-repo_header(Arg, Repo, CommitOid) ->
-    RepoPath = Arg#arg.docroot ++ element(3, Repo),
-    Commit = gert:get_commit_record(RepoPath, CommitOid),
+repo_header(Repo, CommitOid) ->
+    Commit = gert:get_commit_record(Repo#elgit_repo.path, CommitOid),
     CommitMessage = elgit_shared:list_replace([{"\n", "\\\\n", [global]},
                                                {"\n$", "", [global]},
                                                {"\r", "", [global]},
@@ -73,13 +72,13 @@ repo_header(Arg, Repo, CommitOid) ->
 <!--<script data-main=\"/js/elgit.js\" src=\"/js/lib/require.js\"></script>-->
     ">>]}.
 
-tree(Arg, ActionPath, Repo) ->
+tree(ActionPath, Repo) ->
     ActionParts = re:run(ActionPath, "^/tree/([[:alnum:]]+)/(.*)", [{capture, [1,2], list}]),
     case ActionParts of
         {match, Matches} ->
             TreeOid = lists:nth(1, Matches),
             TreePath = lists:nth(2, Matches),
-            tree_partial(Arg, Repo, TreeOid, TreePath);
+            tree_partial(Repo, TreeOid, TreePath);
         nomatch ->
             {redirect_local, "/"}
     end.
@@ -98,16 +97,16 @@ tree_crumb(Repo, TreeOid, TreePath) ->
 tree_crumb_root(Repo, TreeOid) ->
     [<<"
 <li>
-    <a href=\"/">>, element(1, Repo), <<"/tree/">>,
+    <a href=\"/">>, Repo#elgit_repo.slug, <<"/tree/">>,
                     TreeOid, <<"/\">">>,
-                    element(1, Repo), <<"</a>
+                    Repo#elgit_repo.slug, <<"</a>
 </li>
     ">>].
 
 tree_crumb_entry(Repo, TreeOid, TreeLink, TreeCrumb) ->
     [<<"
 <li>
-    <a href=\"/">>, element(1, Repo), <<"/tree/">>,
+    <a href=\"/">>, Repo#elgit_repo.slug, <<"/tree/">>,
                     TreeOid, <<"/">>,
                     TreeLink, <<"/\">">>,
                     TreeCrumb, <<"</a>
@@ -128,29 +127,28 @@ tree_crumb_entries(Repo, TreeOid, TreePath, [TreeCrumb|TreeCrumbs]) ->
     [tree_crumb_entry(Repo, TreeOid, TreeLink, TreeCrumb),
      tree_crumb_entries(Repo, TreeOid, [TreePath, TreeCrumb], TreeCrumbs)].
 
-tree_partial(Arg, Repo, TreeOid, TreePath) ->
-    RepoPath = Arg#arg.docroot ++ element(3, Repo),
-    BranchList = gert:get_branches(RepoPath),
+tree_partial(Repo, TreeOid, TreePath) ->
+    BranchList = gert:get_branches(Repo#elgit_repo.path),
     BranchMatchREs = lists:map(fun(E) -> {valid, "^" ++ E ++ "$"} end, BranchList),
     BranchMatch = elgit_shared:list_match(BranchMatchREs, "refs/heads/" ++ TreeOid),
     case BranchMatch of
         valid ->
-            CommitOid = gert:get_commit_oid(RepoPath, "refs/heads/" ++ TreeOid);
+            CommitOid = gert:get_commit_oid(Repo#elgit_repo.path, "refs/heads/" ++ TreeOid);
         nomatch ->
             CommitOid = TreeOid % we should already have a commit oid
     end,
     case TreePath of
         [] ->
-            [repo_header(Arg, Repo, CommitOid),
+            [repo_header(Repo, CommitOid),
              tree_crumb(Repo, TreeOid, TreePath),
-             tree_entries(Arg, Repo, TreeOid, CommitOid, TreePath)];
+             tree_entries(Repo, TreeOid, CommitOid, TreePath)];
         _ ->
             [tree_crumb(Repo, TreeOid, TreePath),
-             tree_entries(Arg, Repo, TreeOid, CommitOid, TreePath)]
+             tree_entries(Repo, TreeOid, CommitOid, TreePath)]
     end.
 
-tree_entries(Arg, Repo, TreeOid, CommitOid, TreePath) ->
-    Entries = gert:get_tree(Arg#arg.docroot ++ element(3, Repo), CommitOid, TreePath),
+tree_entries(Repo, TreeOid, CommitOid, TreePath) ->
+    Entries = gert:get_tree(Repo#elgit_repo.path, CommitOid, TreePath),
     TreeEntries = [L || {tree, _} = L <- Entries],
     BlobEntries = [L || {blob, _} = L <- Entries],
     SubmoduleEntries = [L || {submodule, _} = L <- Entries],
@@ -175,11 +173,10 @@ tree_folders(Repo, TreeOid, TreePath, [Folder|Folders]) ->
         {submodule, _} ->
             FolderType = "submodule"
     end,
-    RepoSlug = element(1, Repo),
     FolderName = element(2, Folder),
     [<<"
 <li class=\"">>, FolderType, <<"\">
-    <a href=\"/">>, RepoSlug, <<"/tree/">>,
+    <a href=\"/">>, Repo#elgit_repo.slug, <<"/tree/">>,
                     TreeOid, <<"/">>,
                     TreePath, FolderName, <<"/\">">>,
                     FolderName, <<"</a>
@@ -189,11 +186,10 @@ tree_folders(Repo, TreeOid, TreePath, [Folder|Folders]) ->
 tree_files(_, _, _, []) ->
     [];
 tree_files(Repo, TreeOid, TreePath, [File|Files]) ->
-    RepoSlug = element(1, Repo),
     FileName = element(2, File),
     [<<"
 <li class=\"blob\">
-    <a href=\"/">>, RepoSlug, <<"/blob/">>,
+    <a href=\"/">>, Repo#elgit_repo.slug, <<"/blob/">>,
                     TreeOid, <<"/">>,
                     TreePath, FileName, <<"\">">>,
                     FileName, <<"</a>

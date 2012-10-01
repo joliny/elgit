@@ -1,6 +1,7 @@
 -module(elgit_yaws).
 -export([out/1]).
 
+-include_lib("elgit_records.hrl").
 -include_lib("gert.hrl").
 -include_lib("yaws_api.hrl").
 
@@ -24,11 +25,25 @@ out(Arg) ->
 
 out_index(Arg) ->
     [elgit_www:header(Arg),
-     {html, [get_repo_links(elgit_shared:get_repo_list())]},
+     {html, [get_repo_links()]},
      elgit_www:footer(Arg)].
 
-get_repo_links([]) ->
+get_repo_links() ->
+    case elgit_shared:get_repo_list() of
+        [] ->
+            get_setup_link();
+        RepoList ->
+            get_repo_link(RepoList)
+    end.
+
+get_setup_link() ->
+    [<<"<a href=\"/setup/\" class=\"btn\">Setup (no repos defined, yet)</a>">>].
+
+get_repo_link([]) ->
     [];
-get_repo_links([Repo|RepoList]) ->
-    [<<"<a href=\"/">>, element(1, Repo), <<"/\" class=\"btn\">">>,
-     element(2, Repo), <<"</a>">>] ++ get_repo_links(RepoList).
+get_repo_link([Repo|RepoList]) ->
+    [<<"
+<a href=\"/">>, Repo#elgit_repo.slug, <<"/\" class=\"btn\">
+     ">>, Repo#elgit_repo.name, <<"
+</a>
+    ">>] ++ get_repo_link(RepoList).
