@@ -155,12 +155,19 @@ tree_entries(Repo, TreeOid, CommitOid, TreePath) ->
 
     {html, [<<"
 <div id=\"tree\">
-    <ul>
-    ">>,
-        tree_folders(Repo, TreeOid, TreePath, lists:sort(lists:merge(TreeEntries, SubmoduleEntries))),
-        tree_files(Repo, TreeOid, TreePath, lists:sort(BlobEntries)),
-    <<"
-    </ul>
+    <table id=\"tree-table\"
+           class=\"table table-striped\">
+        <thead>
+            <th></th>
+            <th>name</th>
+        </thead>
+        <tbody>
+            ">>,
+            tree_folders(Repo, TreeOid, TreePath, lists:sort(lists:merge(TreeEntries, SubmoduleEntries))),
+            tree_files(Repo, TreeOid, TreePath, lists:sort(BlobEntries)),
+            <<"
+        </tbody>
+    </table>
 </div>
     ">>]}.
 
@@ -169,18 +176,23 @@ tree_folders(_, _, _, []) ->
 tree_folders(Repo, TreeOid, TreePath, [Folder|Folders]) ->
     case Folder of
         {tree, _} ->
-            FolderType = "tree";
+            FolderType = "tree",
+            FolderIcon = "icon-folder-open";
         {submodule, _} ->
-            FolderType = "submodule"
+            FolderType = "submodule",
+            FolderIcon = "icon-folder-close"
     end,
     FolderName = element(2, Folder),
     [<<"
-<li class=\"">>, FolderType, <<"\">
-    <a href=\"/">>, Repo#elgit_repo.slug, <<"/tree/">>,
-                    TreeOid, <<"/">>,
-                    TreePath, FolderName, <<"/\">">>,
-                    FolderName, <<"</a>
-</li>
+<tr class=\"">>, FolderType, <<"\">
+    <td class=\"icon\"><span class=\"">>, FolderIcon, <<"\"></span></td>
+    <td class=\"name\">
+        <a href=\"/">>, Repo#elgit_repo.slug, <<"/tree/">>,
+                        TreeOid, <<"/">>,
+                        TreePath, FolderName, <<"/\">">>,
+                        FolderName, <<"</a>
+    </dt>
+</tr>
     ">>] ++ tree_folders(Repo, TreeOid, TreePath, Folders).
 
 tree_files(_, _, _, []) ->
@@ -188,10 +200,13 @@ tree_files(_, _, _, []) ->
 tree_files(Repo, TreeOid, TreePath, [File|Files]) ->
     FileName = element(2, File),
     [<<"
-<li class=\"blob\">
-    <a href=\"/">>, Repo#elgit_repo.slug, <<"/blob/">>,
-                    TreeOid, <<"/">>,
-                    TreePath, FileName, <<"\">">>,
-                    FileName, <<"</a>
-</li>
+<tr class=\"blob\">
+    <td class=\"icon\"><span class=\"icon-file\"></span></td>
+    <td class=\"name\">
+        <a href=\"/">>, Repo#elgit_repo.slug, <<"/blob/">>,
+                        TreeOid, <<"/">>,
+                        TreePath, FileName, <<"\">">>,
+                        FileName, <<"</a>
+    </td>
+</tr>
     ">>] ++ tree_files(Repo, TreeOid, TreePath, Files).

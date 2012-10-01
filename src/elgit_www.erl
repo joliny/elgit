@@ -19,6 +19,7 @@ header(_Arg) ->
     <head>
         <link href=\"/css/bootstrap.css\" rel=\"stylesheet\"/>
         <link href=\"/css/bootstrap-responsive.css\" rel=\"stylesheet\">
+        <link href=\"/css/elgit.css\" rel=\"stylesheet\"/>
         <title>El Git</title>
     </head>
     <body>
