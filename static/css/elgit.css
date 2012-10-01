@@ -1,5 +1,35 @@
-#tree-table {
-    width: 640px;
+#navbar {
+    margin-bottom: 20px;
+}
+
+#repo-head label {
+    font-weight: bold;
+}
+
+#last-commit .message {
+    background-color: gainsboro;
+    margin: -9px -9px 0px -9px;
+    padding: 9px;
+}
+
+#last-commit .meta {
+    margin-top: 9px;
+}
+
+#last-commit .meta .author {
+    float: left;
+}
+
+#last-commit .meta .oid {
+    float: right;
+}
+
+#tree-crumb li {
+    font-weight: bold;
+}
+
+#tree-crumb li.active {
+    color: #333;
 }
 
 #tree-table .icon {

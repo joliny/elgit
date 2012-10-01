@@ -23,14 +23,16 @@ header(_Arg) ->
         <title>El Git</title>
     </head>
     <body>
-        <div class=\"navbar\">
+        <div id=\"navbar\" class=\"navbar navbar-static-top\">
             <div class=\"navbar-inner\">
-                <span class=\"brand\">El Git</span>
-                <ul class=\"nav\">
-                    <li class=\"active\"><a href=\"/\">Home</a></li>
-                </ul>
+                <div class=\"container\">
+                    <span class=\"brand\">El Git</span>
+                    <ul class=\"nav\">
+                        <li class=\"active\"><a href=\"/\">Home</a></li>
+                    </ul>
+                </div>
             </div>
         </div>
 
-        <div id=\"page\">
+        <div id=\"page\" class=\"container\">
     ">>]}].

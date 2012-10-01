@@ -39,8 +39,8 @@ header(Arg) ->
     BranchList = gert:get_branches(Repo#elgit_repo.path),
     {html, [<<"
 <div id=\"repo\">
-    <div id=\"repo-head\">
-        Branches:
+    <div id=\"repo-head\" class=\"well well-small form-inline\">
+        <label>Branch:</label>
         <select>">>, header_select_branch(BranchList), <<"</select>
     </div>
     ">>]}.
@@ -64,10 +64,12 @@ repo_header(Repo, CommitOid) ->
                                               ], Commit#commit.message),
     CommitAuthor = re:replace(Commit#commit.author, "\"", "\\\\\"", [global]),
     {html, [<<"
-<div id=\"last-commit\">
-    <p>">>, CommitOid, <<"</p>
-    <p>">>, CommitMessage, <<"</p>
-    <p>">>, CommitAuthor, <<"</p>
+<div id=\"last-commit\" class=\"well well-small\">
+    <p class=\"message\">">>, CommitMessage, <<"</p>
+    <div class=\"meta clearfix\">
+        <span class=\"author\">">>, CommitAuthor, <<"</span>
+        <span class=\"oid\">">>, CommitOid, <<"</span>
+    </div>
 </div>
 <!--<script data-main=\"/js/elgit.js\" src=\"/js/lib/require.js\"></script>-->
     ">>]}.
@@ -86,7 +88,7 @@ tree(ActionPath, Repo) ->
 tree_crumb(Repo, TreeOid, TreePath) ->
     TreeCrumbs = re:split(TreePath, "/", [{return, list}]),
     {html, [<<"
-<ul id=\"tree-crumb\" class=\"breadcrumb\">
+<ul id=\"tree-crumb\" class=\"well breadcrumb\">
     ">>,
     case TreeCrumbs of
         [[]|[]] ->
@@ -178,7 +180,7 @@ tree_entries(Repo, TreeOid, CommitOid, TreePath) ->
 
     {html, [<<"
 <div id=\"tree\">
-    <table id=\"tree-table\" class=\"table table-striped\">
+    <table id=\"tree-table\" class=\"well table table-striped\">
         <thead>
             <th></th>
             <th>name</th>
