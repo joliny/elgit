@@ -86,32 +86,49 @@ tree(ActionPath, Repo) ->
 tree_crumb(Repo, TreeOid, TreePath) ->
     TreeCrumbs = re:split(TreePath, "/", [{return, list}]),
     {html, [<<"
-<ul id=\"tree-crumb\">
+<ul id=\"tree-crumb\" class=\"breadcrumb\">
     ">>,
-        tree_crumb_root(Repo, TreeOid),
-        tree_crumb_entries(Repo, TreeOid, [], TreeCrumbs),
+    case TreeCrumbs of
+        [[]|[]] ->
+            tree_crumb_root(Repo, TreeOid, active);
+        _ ->
+            [tree_crumb_root(Repo, TreeOid, inactive),
+             tree_crumb_entries(Repo, TreeOid, [], TreeCrumbs)]
+    end,
     <<"
 </ul>
     ">>]}.
 
-tree_crumb_root(Repo, TreeOid) ->
-    [<<"
+tree_crumb_root(Repo, TreeOid, IsActive) ->
+    case IsActive of
+        active ->
+            [<<"<li class=\"active\">">>, Repo#elgit_repo.slug, <<"</li>">>];
+        _ ->
+            [<<"
 <li>
     <a href=\"/">>, Repo#elgit_repo.slug, <<"/tree/">>,
                     TreeOid, <<"/\">">>,
                     Repo#elgit_repo.slug, <<"</a>
+    <span class=\"divider\">/</span>
 </li>
-    ">>].
+            ">>]
+    end.
 
-tree_crumb_entry(Repo, TreeOid, TreeLink, TreeCrumb) ->
-    [<<"
+tree_crumb_entry(Repo, TreeOid, TreeLink, TreeCrumb, IsActive) ->
+    case IsActive of
+        active ->
+            [<<"<li class=\"active\">">>, TreeCrumb, <<"</li>">>];
+        _ ->
+            [<<"
 <li>
     <a href=\"/">>, Repo#elgit_repo.slug, <<"/tree/">>,
                     TreeOid, <<"/">>,
                     TreeLink, <<"/\">">>,
                     TreeCrumb, <<"</a>
+    <span class=\"divider\">/</span>
 </li>
-    ">>].
+            ">>]
+    end.
 
 tree_crumb_entries(_Repo, _TreeOid, _TreePath, []) ->
     [];
@@ -124,7 +141,13 @@ tree_crumb_entries(Repo, TreeOid, TreePath, [TreeCrumb|TreeCrumbs]) ->
         _ ->
             TreeLink = elgit_shared:join([TreePath, TreeCrumb], "/")
     end,
-    [tree_crumb_entry(Repo, TreeOid, TreeLink, TreeCrumb),
+    case TreeCrumbs of
+        [[]] ->
+            IsActive = active;
+        _ ->
+            IsActive = inactive
+    end,
+    [tree_crumb_entry(Repo, TreeOid, TreeLink, TreeCrumb, IsActive),
      tree_crumb_entries(Repo, TreeOid, [TreePath, TreeCrumb], TreeCrumbs)].
 
 tree_partial(Repo, TreeOid, TreePath) ->
@@ -155,8 +178,7 @@ tree_entries(Repo, TreeOid, CommitOid, TreePath) ->
 
     {html, [<<"
 <div id=\"tree\">
-    <table id=\"tree-table\"
-           class=\"table table-striped\">
+    <table id=\"tree-table\" class=\"table table-striped\">
         <thead>
             <th></th>
             <th>name</th>
