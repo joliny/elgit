@@ -6,12 +6,10 @@ define([
     'views/repo/tree'
 ], function($, _, Backbone, viewRepoCommits, viewRepoTree) {
     var viewRepoMain = Backbone.View.extend({
-        render: function(repo) {
+        render: function(repo, oid) {
             var view = this;
 
             $('#repo-head .nav-tabs a').each(function(index) {
-                var actionHref = $(this).attr('href');
-
                 $(this).click(function() {
                     $('#repo-head .nav-tabs li').each(function(index) {
                         $(this).removeClass('active');
@@ -19,14 +17,37 @@ define([
 
                     $(this).parent().addClass('active');
 
-                    view.changeAction(actionHref);
+                    view.changeAction($(this).attr('href'));
                     return false;
                 });
+            });
+
+            $('#tree-branch').change(function() {
+                var branch = $(this).val();
+
+                if (!branch) {
+                    return;
+                }
+
+                $('#repo-head .nav-tabs a').each(function(index) {
+                    var actionHref  = $(this).attr('href');
+                    var actionParts = actionHref.match(/^\/(.+?)\/(.+?)\/(.+?)\/$/);
+
+                    if (branch != actionParts[3]) {
+                        actionParts[3] = branch;
+                        actionHref     = '/' + actionParts.slice(1) // first element is full match -> ignore it!
+                                                          .join('/') + '/';
+
+                        $(this).attr('href', actionHref);
+                    }
+                });
+
+                $('#repo-head .nav-tabs li.active a').click();
             });
         },
 
         changeAction: function(actionHref) {
-            actionParts = actionHref.match(/^\/(.+?)\/(.+?)\/(.+?)\/$/);
+            var actionParts = actionHref.match(/^\/(.+?)\/(.+?)\/(.+?)\/$/);
 
             $.ajax({
                 url: actionHref + '?partial=1',

@@ -13,17 +13,21 @@ define([
             '*actions': 'defaultAction'
         },
 
-        repoAction: function(repo) {
-            this.repoTreeAction(repo, 'master', '');
+        repoAction: function(repo, oid) {
+            if (!oid) {
+                oid = 'master';
+            }
+
+            this.repoTreeAction(repo, oid, '');
         },
 
-        repoCommitsAction: function(repo) {
-            viewRepoMain.render(repo);
-            viewRepoCommits.render(repo);
+        repoCommitsAction: function(repo, oid) {
+            viewRepoMain.render(repo, oid);
+            viewRepoCommits.render(repo, oid);
         },
 
         repoTreeAction: function(repo, oid, path) {
-            viewRepoMain.render(repo);
+            viewRepoMain.render(repo, oid);
             viewRepoTree.render(repo, oid, path);
         },
 
