@@ -71,7 +71,6 @@ repo_header(Repo, CommitOid) ->
         <span class=\"oid\">">>, CommitOid, <<"</span>
     </div>
 </div>
-<!--<script data-main=\"/js/elgit.js\" src=\"/js/lib/require.js\"></script>-->
     ">>]}.
 
 tree(ActionPath, Repo) ->

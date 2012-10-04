@@ -9,6 +9,8 @@
 footer(_Arg) ->
     [{html, [<<"
         </div>
+
+        <script data-main=\"/js/elgit.js\" src=\"/js/lib/require.js\"></script>
     </body>
 </html>
     ">>]}].
