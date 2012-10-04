@@ -10,6 +10,7 @@ out(Arg) ->
     Repo = elgit_shared:get_repo(string:substr(Path, 2)),
     ActionPath = string:substr(Path, 2 + string:len(Repo#elgit_repo.slug)),
     RepoActions = [{commits, "^/commits/.*"},
+                   {tags, "^/tags/$"},
                    {tree, "^/tree/.*"},
                    {index, "^/$"}],
     RepoAction = elgit_shared:list_match(RepoActions, ActionPath),
@@ -36,6 +37,8 @@ out_partial(RepoAction, ActionPath, Repo) ->
     case RepoAction of
         commits ->
             commits(ActionPath, Repo);
+        tags ->
+            tags_partial(Repo);
         tree ->
             tree(ActionPath, Repo);
         index ->
@@ -76,7 +79,8 @@ header(RepoAction, ActionPath, Repo) ->
 
         ">>,
         header_select_action([{"tree", "Files", ActionHrefPrefix ++ "tree" ++ ActionHrefSuffix},
-                              {"commits", "Commits", ActionHrefPrefix ++ "commits" ++ ActionHrefSuffix}],
+                              {"commits", "Commits", ActionHrefPrefix ++ "commits" ++ ActionHrefSuffix},
+                              {"tags", "Tags", ActionHrefPrefix ++ "tags/"}],
                              SelectedAction),
         <<"
     </ul>
@@ -181,6 +185,25 @@ commits_entry([Commit|Commits]) ->
 </tr>
     ">>] ++ commits_entry(Commits).
 
+tags_partial(Repo) ->
+    Tags = gert:get_tag_records(Repo#elgit_repo.path),
+    {html, [<<"
+<table id=\"tags-table\" class=\"well table table-striped\">
+    <thead>
+        <th>tag name</th>
+        <th>oid</th>
+    </thead>
+    <tbody>
+        ">>,
+        lists:map(fun(T) -> [<<"<tr>
+                                    <td>">>, T#gert_tag.refname, <<"</td>
+                                    <td><em>">>, T#gert_tag.oid, <<"</em></td>
+                                </tr>">>] end, Tags),
+        <<"
+    </tbody>
+</table>
+    ">>]}.
+
 tree(ActionPath, Repo) ->
     ActionParts = re:run(ActionPath, "^/tree/([[:alnum:]]+)/(.*)", [{capture, [1,2], list}]),
     case ActionParts of
@@ -284,7 +307,6 @@ tree_entries(Repo, TreeOid, CommitOid, TreePath) ->
     TreeEntries = [L || {tree, _} = L <- Entries],
     BlobEntries = [L || {blob, _} = L <- Entries],
     SubmoduleEntries = [L || {submodule, _} = L <- Entries],
-
     {html, [<<"
 <div id=\"tree\">
     <table id=\"tree-table\" class=\"well table table-striped\">

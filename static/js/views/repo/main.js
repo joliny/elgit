@@ -3,8 +3,9 @@ define([
     'underscore',
     'backbone',
     'views/repo/commits',
+    'views/repo/tags',
     'views/repo/tree'
-], function($, _, Backbone, viewRepoCommits, viewRepoTree) {
+], function($, _, Backbone, viewRepoCommits, viewRepoTags, viewRepoTree) {
     var viewRepoMain = Backbone.View.extend({
         render: function(repo, oid) {
             var view = this;
@@ -30,13 +31,18 @@ define([
                 }
 
                 $('#repo-head .nav-tabs a').each(function(index) {
+                    /**
+                     * actionParts @1 = repo
+                     * actionParts @2 = action
+                     * actionParts @4 = branch
+                     */
                     var actionHref  = $(this).attr('href');
-                    var actionParts = actionHref.match(/^\/(.+?)\/(.+?)\/(.+?)\/$/);
+                    var actionParts = actionHref.match(/^\/(.+?)\/(.+?)(\/(.+?))?\/$/);
 
-                    if (branch != actionParts[3]) {
-                        actionParts[3] = branch;
-                        actionHref     = '/' + actionParts.slice(1) // first element is full match -> ignore it!
-                                                          .join('/') + '/';
+                    if (!!actionParts[4] && branch != actionParts[4]) {
+                        actionHref = '/' + actionParts[1] +
+                                     '/' + actionParts[2] +
+                                     '/' + branch + '/';
 
                         $(this).attr('href', actionHref);
                     }
@@ -47,7 +53,12 @@ define([
         },
 
         changeAction: function(actionHref) {
-            var actionParts = actionHref.match(/^\/(.+?)\/(.+?)\/(.+?)\/$/);
+            /**
+             * actionParts @1 = repo
+             * actionParts @2 = action
+             * actionParts @4 = branch
+             */
+            var actionParts = actionHref.match(/^\/(.+?)\/(.+?)(\/(.+?))?\/$/);
 
             $.ajax({
                 url: actionHref + '?partial=1',
@@ -57,9 +68,11 @@ define([
                     Backbone.history.navigate(actionHref, true);
 
                     if ('commits' == actionParts[2]) {
-                        viewRepoCommits.render(actionParts[1]);
+                        viewRepoCommits.render();
+                    } else if ('tags' == actionParts[2]) {
+                        viewRepoTags.render();
                     } else if ('tree' == actionParts[2]) {
-                        viewRepoTree.render(actionParts[1], actionParts[3], '');
+                        viewRepoTree.render(actionParts[1], actionParts[4], '');
                     }
                 }
             });

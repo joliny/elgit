@@ -3,11 +3,11 @@ define([
     'underscore',
     'backbone'
 ], function($, _, Backbone) {
-    var viewRepoCommits = Backbone.View.extend({
+    var viewRepoTags = Backbone.View.extend({
         render: function() {
             // nothing to do here...
         }
     });
 
-    return new viewRepoCommits;
+    return new viewRepoTags;
 });
