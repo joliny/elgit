@@ -36,20 +36,39 @@ out_partial(Arg) ->
 header(Arg) ->
     Path = (yaws_api:request_url(Arg))#url.path,
     Repo = elgit_shared:get_repo(string:substr(Path, 2)),
+    PathBranch = re:run(string:substr(Path, 2 + string:len(Repo#elgit_repo.slug)),
+                        "^/tree/([[:alnum:]]+)/.*",
+                        [{capture, [1], list}]),
+    case PathBranch of
+        {match, [Branch]} ->
+            SelectedBranch = "refs/heads/" ++ Branch;
+        nomatch ->
+            SelectedBranch = "refs/heads/master"
+    end,
     BranchList = gert:get_branches(Repo#elgit_repo.path),
     {html, [<<"
 <div id=\"repo-head\" class=\"well well-small form-inline\">
     <label>Branch:</label>
-    <select>">>, header_select_branch(BranchList), <<"</select>
+    <select>
+        <option value=\"-\">-- select a branch --</option>
+        ">>, header_select_branch(BranchList, SelectedBranch), <<"
+    </select>
 </div>
     ">>]}.
 
-header_select_branch([]) ->
+header_select_branch([], _) ->
     [];
-header_select_branch([Branch|Branches]) ->
-    [<<"<option>">>,
-     re:replace(Branch, "refs/heads/", ""),
-     <<"</option>">>] ++ header_select_branch(Branches).
+header_select_branch([Branch|Branches], SelectedBranch) ->
+    Slug = re:replace(Branch, "refs/heads/", ""),
+    if
+        Branch =:= SelectedBranch ->
+            SelectedAttr = <<" selected=\"selected\"">>;
+        true ->
+            SelectedAttr = <<"">>
+    end,
+    [<<"<option value=\"">>, Slug, <<"\"">>, SelectedAttr, <<">">>,
+     Slug,
+     <<"</option>">>] ++ header_select_branch(Branches, SelectedBranch).
 
 footer(_Arg) ->
     {html, [<<"</div>">>]}.
