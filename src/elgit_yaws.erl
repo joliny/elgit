@@ -15,7 +15,7 @@ out(Arg) ->
             {redirect_local, Path ++ "/"};
         match ->
             ReqTypes = [{index, "^/$"},
-                        {setup, "^/setup/$"},
+                        {setup, "^/setup/.*"},
                         {xhr, "^/xhr/.+"},
                         {repo, "^/[[:alnum:]-]+/.*"}],
             ReqType = elgit_shared:list_match(ReqTypes, Path),
