@@ -141,15 +141,18 @@ repo_header(Repo, CommitOid) ->
     ">>]}.
 
 commits(ActionPath, Repo) ->
-    ActionParts = re:run(ActionPath, "^/commits/([[:alnum:]]+)/", [{capture, [1], list}]),
+    ActionParts = re:run(ActionPath, "^/commits/([[:alnum:]]+)/(page/([0-9]+)/)?", [{capture, [1,2,3], list}]),
+    io:format("matches: ~p ~n", [ActionParts]),
     case ActionParts of
-        {match, [HeadOid]} ->
-            commits_partial(Repo, HeadOid);
+        {match, [HeadOid, [], []]} ->
+            commits_partial(Repo, HeadOid, 0);
+        {match, [HeadOid, _, Page]} ->
+            commits_partial(Repo, HeadOid, list_to_integer(Page));
         nomatch ->
             {redirect_local, "/"}
     end.
 
-commits_partial(Repo, HeadOid) ->
+commits_partial(Repo, HeadOid, Page) ->
     BranchList = gert:get_branches(Repo#elgit_repo.path),
     BranchMatchREs = lists:map(fun(E) -> {valid, "^" ++ E ++ "$"} end, BranchList),
     BranchMatch = elgit_shared:list_match(BranchMatchREs, "refs/heads/" ++ HeadOid),
@@ -159,7 +162,7 @@ commits_partial(Repo, HeadOid) ->
         nomatch ->
             CommitOid = HeadOid % we should already have a commit oid
     end,
-    Commits = gert:get_commit_records(Repo#elgit_repo.path, CommitOid, 0, 10),
+    Commits = gert:get_commit_records(Repo#elgit_repo.path, CommitOid, Page * 10, 10),
     {html, [<<"
 <div class=\"well well-small\">Commits at <strong>">>, HeadOid, <<"</strong></div>
 <table id=\"commits-table\" class=\"well table table-striped\">
