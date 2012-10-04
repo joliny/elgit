@@ -145,12 +145,41 @@ commits(ActionPath, Repo) ->
             {redirect_local, "/"}
     end.
 
-commits_partial(_Repo, HeadOid) ->
+commits_partial(Repo, HeadOid) ->
+    BranchList = gert:get_branches(Repo#elgit_repo.path),
+    BranchMatchREs = lists:map(fun(E) -> {valid, "^" ++ E ++ "$"} end, BranchList),
+    BranchMatch = elgit_shared:list_match(BranchMatchREs, "refs/heads/" ++ HeadOid),
+    case BranchMatch of
+        valid ->
+            CommitOid = gert:get_commit_oid(Repo#elgit_repo.path, "refs/heads/" ++ HeadOid);
+        nomatch ->
+            CommitOid = HeadOid % we should already have a commit oid
+    end,
+    Commits = gert:get_commit_records(Repo#elgit_repo.path, CommitOid, 0, 10),
     {html, [<<"
-<div class=\"well well-small\">
-    Commits at <strong>">>, HeadOid, <<"</strong>
-</div>
+<div class=\"well well-small\">Commits at <strong>">>, HeadOid, <<"</strong></div>
+<table id=\"commits-table\" class=\"well table table-striped\">
+    <thead>
+        <th>oid</th>
+        <th>message</th>
+    </thead>
+    <tbody>
+        ">>,
+        commits_entry(Commits),
+        <<"
+    </tbody>
+</table>
     ">>]}.
+
+commits_entry([]) ->
+    [];
+commits_entry([Commit|Commits]) ->
+    [<<"
+<tr>
+    <td>">>, Commit#commit.oid, <<"</td>
+    <td>">>, Commit#commit.message, <<"</td>
+</tr>
+    ">>] ++ commits_entry(Commits).
 
 tree(ActionPath, Repo) ->
     ActionParts = re:run(ActionPath, "^/tree/([[:alnum:]]+)/(.*)", [{capture, [1,2], list}]),
