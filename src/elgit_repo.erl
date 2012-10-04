@@ -192,13 +192,19 @@ tags_partial(Repo) ->
     <thead>
         <th>tag name</th>
         <th>oid</th>
+        <th></th>
     </thead>
     <tbody>
         ">>,
-        lists:map(fun(T) -> [<<"<tr>
-                                    <td>">>, T#gert_tag.refname, <<"</td>
-                                    <td><em>">>, T#gert_tag.oid, <<"</em></td>
-                                </tr>">>] end, Tags),
+        lists:map(fun(T) -> [<<"
+<tr>
+    <td>">>, T#gert_tag.refname, <<"</td>
+    <td><em>">>, T#gert_tag.oid, <<"</em></td>
+    <td><a href=\"/">>, Repo#elgit_repo.slug,
+                        <<"/tree/">>,
+                        T#gert_tag.oid, <<"/\">Browse</a></td>
+</tr>
+                             ">>] end, Tags),
         <<"
     </tbody>
 </table>
