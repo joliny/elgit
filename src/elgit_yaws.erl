@@ -10,17 +10,22 @@
 %%%
 out(Arg) ->
     Path = (yaws_api:request_url(Arg))#url.path,
-    ReqTypes = [{index, "^/$"},
-                {setup, "^/setup/$"},
-                {xhr, "^/xhr/.+"},
-                {repo, "^/[[:alnum:]-]+/.*"}],
-    ReqType = elgit_shared:list_match(ReqTypes, Path),
-    case ReqType of
-        index -> out_index(Arg);
-        setup -> elgit_setup:out(Arg);
-        xhr -> elgit_xhr:out(Arg);
-        repo -> elgit_repo:out(Arg);
-        _ -> {redirect_local, "/"}
+    case re:run(Path, ".*/$", [{capture, none}]) of
+        nomatch ->
+            {redirect_local, Path ++ "/"};
+        match ->
+            ReqTypes = [{index, "^/$"},
+                        {setup, "^/setup/$"},
+                        {xhr, "^/xhr/.+"},
+                        {repo, "^/[[:alnum:]-]+/.*"}],
+            ReqType = elgit_shared:list_match(ReqTypes, Path),
+            case ReqType of
+                index -> out_index(Arg);
+                setup -> elgit_setup:out(Arg);
+                xhr -> elgit_xhr:out(Arg);
+                repo -> elgit_repo:out(Arg);
+                _ -> {redirect_local, "/"}
+            end
     end.
 
 out_index(Arg) ->
