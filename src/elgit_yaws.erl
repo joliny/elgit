@@ -2,7 +2,6 @@
 -export([out/1]).
 
 -include_lib("elgit_records.hrl").
--include_lib("gert.hrl").
 -include_lib("yaws_api.hrl").
 
 %%%

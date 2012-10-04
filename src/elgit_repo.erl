@@ -124,8 +124,8 @@ repo_header(Repo, CommitOid) ->
                                                {"\n$", "", [global]},
                                                {"\r", "", [global]},
                                                {"\"", "\\\\\"", [global]}
-                                              ], Commit#commit.message),
-    CommitAuthor = re:replace(Commit#commit.author, "\"", "\\\\\"", [global]),
+                                              ], Commit#gert_commit.message),
+    CommitAuthor = re:replace(Commit#gert_commit.author, "\"", "\\\\\"", [global]),
     {html, [<<"
 <div id=\"last-commit\" class=\"well well-small\">
     <p class=\"message\">">>, CommitMessage, <<"</p>
@@ -176,8 +176,8 @@ commits_entry([]) ->
 commits_entry([Commit|Commits]) ->
     [<<"
 <tr>
-    <td>">>, Commit#commit.oid, <<"</td>
-    <td>">>, Commit#commit.message, <<"</td>
+    <td>">>, Commit#gert_commit.oid, <<"</td>
+    <td>">>, Commit#gert_commit.message, <<"</td>
 </tr>
     ">>] ++ commits_entry(Commits).
 
