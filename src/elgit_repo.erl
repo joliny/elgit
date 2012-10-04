@@ -38,11 +38,10 @@ header(Arg) ->
     Repo = elgit_shared:get_repo(string:substr(Path, 2)),
     BranchList = gert:get_branches(Repo#elgit_repo.path),
     {html, [<<"
-<div id=\"repo\">
-    <div id=\"repo-head\" class=\"well well-small form-inline\">
-        <label>Branch:</label>
-        <select>">>, header_select_branch(BranchList), <<"</select>
-    </div>
+<div id=\"repo-head\" class=\"well well-small form-inline\">
+    <label>Branch:</label>
+    <select>">>, header_select_branch(BranchList), <<"</select>
+</div>
     ">>]}.
 
 header_select_branch([]) ->
@@ -64,13 +63,14 @@ repo_header(Repo, CommitOid) ->
                                               ], Commit#commit.message),
     CommitAuthor = re:replace(Commit#commit.author, "\"", "\\\\\"", [global]),
     {html, [<<"
-<div id=\"last-commit\" class=\"well well-small\">
-    <p class=\"message\">">>, CommitMessage, <<"</p>
-    <div class=\"meta clearfix\">
-        <span class=\"author\">">>, CommitAuthor, <<"</span>
-        <span class=\"oid\">">>, CommitOid, <<"</span>
+<div id=\"repo\">
+    <div id=\"last-commit\" class=\"well well-small\">
+        <p class=\"message\">">>, CommitMessage, <<"</p>
+        <div class=\"meta clearfix\">
+            <span class=\"author\">">>, CommitAuthor, <<"</span>
+            <span class=\"oid\">">>, CommitOid, <<"</span>
+        </div>
     </div>
-</div>
     ">>]}.
 
 tree(ActionPath, Repo) ->
