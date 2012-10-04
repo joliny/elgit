@@ -25,18 +25,18 @@ get_repo_list() ->
     end,
     mnesia:activity(transaction, F).
 
-get_repo(XhrAction) ->
-    get_repo_match(get_repo_list(), XhrAction).
+get_repo(Path) ->
+    get_repo_match(get_repo_list(), Path).
 
 get_repo_match([], _) ->
     nomatch;
-get_repo_match([Repo|RepoList], XhrAction) ->
+get_repo_match([Repo|RepoList], Path) ->
     RERepo = "^" ++ Repo#elgit_repo.slug ++ "/.*",
-    case re:run(XhrAction, RERepo, [{capture, none}]) of
+    case re:run(Path, RERepo, [{capture, none}]) of
         match ->
             Repo;
         nomatch ->
-            get_repo_match(RepoList, XhrAction)
+            get_repo_match(RepoList, Path)
     end.
 
 %%%
