@@ -6,18 +6,6 @@
 -include_lib("yaws_api.hrl").
 
 out(Arg) ->
-    case elgit_shared:is_partial(Arg) of
-        false ->
-            [elgit_www:header(Arg),
-             header(Arg),
-             out_partial(Arg),
-             footer(Arg),
-             elgit_www:footer(Arg)];
-         true ->
-            out_partial(Arg)
-    end.
-
-out_partial(Arg) ->
     Path = (yaws_api:request_url(Arg))#url.path,
     Repo = elgit_shared:get_repo(string:substr(Path, 2)),
     ActionPath = string:substr(Path, 2 + string:len(Repo#elgit_repo.slug)),
@@ -26,45 +14,83 @@ out_partial(Arg) ->
                    {index, "^/$"}],
     RepoAction = elgit_shared:list_match(RepoActions, ActionPath),
     case RepoAction of
+        nomatch ->
+            {redirect_local, "/"};
+        _ ->
+            out_repo(Arg, RepoAction, Repo, ActionPath)
+    end.
+
+out_repo(Arg, RepoAction, Repo, ActionPath) ->
+    case elgit_shared:is_partial(Arg) of
+        false ->
+            [elgit_www:header(Arg),
+             header(RepoAction, ActionPath, Repo),
+             out_partial(RepoAction, ActionPath, Repo),
+             footer(),
+             elgit_www:footer(Arg)];
+        true ->
+            out_partial(RepoAction, ActionPath, Repo)
+    end.
+
+out_partial(RepoAction, ActionPath, Repo) ->
+    case RepoAction of
         commits ->
             commits(ActionPath, Repo);
         tree ->
             tree(ActionPath, Repo);
         index ->
             tree("/tree/master/", Repo);
-        _ ->
+        _->
             {redirect_local, "/"}
     end.
 
-header(Arg) ->
-    Path = (yaws_api:request_url(Arg))#url.path,
-    Repo = elgit_shared:get_repo(string:substr(Path, 2)),
-    PathBranch = re:run(string:substr(Path, 2 + string:len(Repo#elgit_repo.slug)),
-                        "^/tree/([[:alnum:]]+)/.*",
+header(RepoAction, ActionPath, Repo) ->
+    case RepoAction of
+        commits ->
+            SelectedAction = "commits";
+        _ ->
+            SelectedAction = "tree"
+    end,
+    PathBranch = re:run(ActionPath,
+                        "^/.+/([[:alnum:]]+)/.*",
                         [{capture, [1], list}]),
     case PathBranch of
         {match, [Branch]} ->
-            SelectedBranch = "refs/heads/" ++ Branch;
+            SelectedBranch = Branch;
         nomatch ->
-            SelectedBranch = "refs/heads/master"
+            SelectedBranch = "master"
     end,
     BranchList = gert:get_branches(Repo#elgit_repo.path),
+    ActionHrefPrefix = "/" ++ Repo#elgit_repo.slug ++ "/",
+    ActionHrefSuffix = "/" ++ SelectedBranch ++ "/",
     {html, [<<"
-<div id=\"repo-head\" class=\"well well-small form-inline\">
-    <label>Branch:</label>
-    <select id=\"tree-branch\">
-        <option value=\"\">-- select a branch --</option>
-        ">>, header_select_branch(BranchList, SelectedBranch), <<"
-    </select>
+<div id=\"repo-head\" class=\"form-inline\">
+    <ul class=\"nav nav-tabs\">
+        <li class=\"tree-tab\">
+            <label>Branch:</label>
+            <select id=\"tree-branch\">
+                <option value=\"\">-- select a branch --</option>
+                ">>, header_select_branch(BranchList, SelectedBranch), <<"
+            </select>
+        </li>
+
+        ">>,
+        header_select_action([{"tree", "Files", ActionHrefPrefix ++ "tree" ++ ActionHrefSuffix},
+                              {"commits", "Commits", ActionHrefPrefix ++ "commits" ++ ActionHrefSuffix}],
+                             SelectedAction),
+        <<"
+    </ul>
 </div>
+
+<div id=\"repo\">
     ">>]}.
 
 header_select_branch([], _) ->
     [];
 header_select_branch([Branch|Branches], SelectedBranch) ->
-    Slug = re:replace(Branch, "refs/heads/", ""),
+    Slug = re:replace(Branch, "refs/heads/", "", [{return, list}]),
     if
-        Branch =:= SelectedBranch ->
+        Slug =:= SelectedBranch ->
             SelectedAttr = <<" selected=\"selected\"">>;
         true ->
             SelectedAttr = <<"">>
@@ -73,7 +99,23 @@ header_select_branch([Branch|Branches], SelectedBranch) ->
      Slug,
      <<"</option>">>] ++ header_select_branch(Branches, SelectedBranch).
 
-footer(_Arg) ->
+header_select_action([], _) ->
+    [];
+header_select_action([Action|Actions], SelectedAction) ->
+    {ActionSlug, ActionTitle, ActionHref} = Action,
+    if
+        ActionSlug =:= SelectedAction ->
+            SelectedAttr = <<" class=\"active\"">>;
+        true ->
+            SelectedAttr = <<"">>
+    end,
+    [<<"
+<li">>, SelectedAttr, <<">
+    <a href=\"">>, ActionHref, <<"\">">>, ActionTitle, <<"</a>
+</li>
+    ">>] ++ header_select_action(Actions, SelectedAction).
+
+footer() ->
     {html, [<<"</div>">>]}.
 
 repo_header(Repo, CommitOid) ->
@@ -85,14 +127,13 @@ repo_header(Repo, CommitOid) ->
                                               ], Commit#commit.message),
     CommitAuthor = re:replace(Commit#commit.author, "\"", "\\\\\"", [global]),
     {html, [<<"
-<div id=\"repo\">
-    <div id=\"last-commit\" class=\"well well-small\">
-        <p class=\"message\">">>, CommitMessage, <<"</p>
-        <div class=\"meta clearfix\">
-            <span class=\"author\">">>, CommitAuthor, <<"</span>
-            <span class=\"oid\">">>, CommitOid, <<"</span>
-        </div>
+<div id=\"last-commit\" class=\"well well-small\">
+    <p class=\"message\">">>, CommitMessage, <<"</p>
+    <div class=\"meta clearfix\">
+        <span class=\"author\">">>, CommitAuthor, <<"</span>
+        <span class=\"oid\">">>, CommitOid, <<"</span>
     </div>
+</div>
     ">>]}.
 
 commits(ActionPath, Repo) ->
@@ -106,7 +147,7 @@ commits(ActionPath, Repo) ->
 
 commits_partial(_Repo, HeadOid) ->
     {html, [<<"
-<div id=\"repo-head\" class=\"well well-small\">
+<div class=\"well well-small\">
     Commits at <strong>">>, HeadOid, <<"</strong>
 </div>
     ">>]}.
