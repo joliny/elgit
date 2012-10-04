@@ -7,6 +7,16 @@ define([
         render: function(repo, oid, path) {
             var view = this;
 
+            $('#tree-branch').change(function() {
+                var branch = $(this).val();
+
+                if (!branch) {
+                    return;
+                }
+
+                view.changeTree(repo, branch, '');
+            });
+
             $('#tree-crumb a').each(function(index) {
                 treeParts = $(this).attr('href').match(/^\/.+\/tree\/.+?\/(.*)$/);
 
@@ -25,8 +35,7 @@ define([
         },
 
         changeTree: function(repo, oid, path) {
-            console.log('onclick',path);
-            var view = this;
+            var view     = this;
             var treeLink = '/' + repo +
                            '/tree/' + oid +
                            '/' + path;

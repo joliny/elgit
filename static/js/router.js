@@ -5,9 +5,9 @@ define([
 ], function(Backbone, viewRepoMain, viewRepoTree) {
     var AppRouter = Backbone.Router.extend({
         routes: {
-            ':repo/': 'repoAction',
-            ':repo/tree/:oid/': 'repoAction', // tree index
             ':repo/tree/:oid/*path': 'repoTreeAction',
+            ':repo/tree/:oid/': 'repoAction', // tree index
+            ':repo/': 'repoAction',
             '*actions': 'defaultAction'
         },
 

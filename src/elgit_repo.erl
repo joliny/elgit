@@ -49,8 +49,8 @@ header(Arg) ->
     {html, [<<"
 <div id=\"repo-head\" class=\"well well-small form-inline\">
     <label>Branch:</label>
-    <select>
-        <option value=\"-\">-- select a branch --</option>
+    <select id=\"tree-branch\">
+        <option value=\"\">-- select a branch --</option>
         ">>, header_select_branch(BranchList, SelectedBranch), <<"
     </select>
 </div>
