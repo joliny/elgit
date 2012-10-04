@@ -1,10 +1,12 @@
 define([
   'backbone',
   'views/repo/main',
+  'views/repo/commits',
   'views/repo/tree'
-], function(Backbone, viewRepoMain, viewRepoTree) {
+], function(Backbone, viewRepoMain, viewRepoCommits, viewRepoTree) {
     var AppRouter = Backbone.Router.extend({
         routes: {
+            ':repo/commits/:oid/': 'repoCommitsAction',
             ':repo/tree/:oid/*path': 'repoTreeAction',
             ':repo/tree/:oid/': 'repoAction', // tree index
             ':repo/': 'repoAction',
@@ -12,12 +14,16 @@ define([
         },
 
         repoAction: function(repo) {
-            viewRepoMain.render(repo);
-
             this.repoTreeAction(repo, 'master', '');
         },
 
+        repoCommitsAction: function(repo) {
+            viewRepoMain.render(repo);
+            viewRepoCommits.render(repo);
+        },
+
         repoTreeAction: function(repo, oid, path) {
+            viewRepoMain.render(repo);
             viewRepoTree.render(repo, oid, path);
         },
 

@@ -21,10 +21,13 @@ out_partial(Arg) ->
     Path = (yaws_api:request_url(Arg))#url.path,
     Repo = elgit_shared:get_repo(string:substr(Path, 2)),
     ActionPath = string:substr(Path, 2 + string:len(Repo#elgit_repo.slug)),
-    RepoActions = [{tree, "^/tree/.*"},
+    RepoActions = [{commits, "^/commits/.*"},
+                   {tree, "^/tree/.*"},
                    {index, "^/$"}],
     RepoAction = elgit_shared:list_match(RepoActions, ActionPath),
     case RepoAction of
+        commits ->
+            commits(ActionPath, Repo);
         tree ->
             tree(ActionPath, Repo);
         index ->
@@ -90,6 +93,22 @@ repo_header(Repo, CommitOid) ->
             <span class=\"oid\">">>, CommitOid, <<"</span>
         </div>
     </div>
+    ">>]}.
+
+commits(ActionPath, Repo) ->
+    ActionParts = re:run(ActionPath, "^/commits/([[:alnum:]]+)/", [{capture, [1], list}]),
+    case ActionParts of
+        {match, [HeadOid]} ->
+            commits_partial(Repo, HeadOid);
+        nomatch ->
+            {redirect_local, "/"}
+    end.
+
+commits_partial(_Repo, HeadOid) ->
+    {html, [<<"
+<div id=\"repo-head\" class=\"well well-small\">
+    Commits at <strong>">>, HeadOid, <<"</strong>
+</div>
     ">>]}.
 
 tree(ActionPath, Repo) ->
