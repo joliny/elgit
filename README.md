@@ -62,7 +62,7 @@ send a pull request.
 
 ## Authors
 
-* Marc Neudert <marc.neudert (at) gmail (dot) com>
+* Marc Neudert &lt;marc.neudert (at) gmail (dot) com&gt;
 
 
 ## License
