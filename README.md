@@ -1,10 +1,10 @@
 # El Git
+
 **Git repository browser in Erlang**
 
 El Git is a git repository browser written in Erlang. It is based on
 [Yaws](https://github.com/klacke/yaws) and
 [Gert](https://github.com/mneudert/gert).
-
 
 ## Installation
 
@@ -34,11 +34,12 @@ Adding the following lines to your yaws.conf configures it:
 
 And (re-)start Yaws.
 
+A ready-to-use [El Git Vagrant](https://github.com/mneudert/vagrant-elgit)
+configuration is also in the works.
 
 ## Usage
 
 Open http://elgit.dev in your browser and enjoy "Hello World!".
-
 
 ## External Libraries/Sources
 
@@ -53,19 +54,7 @@ In alphabetical order:
 - [RequireJS](http://requirejs.org/)
 - [Yaws](https://github.com/klacke/yaws/)
 
-
 ## Contributing
 
 Fork El Git on GitHub, make it awesomer (preferably in a topic branch),
 send a pull request.
-
-
-## Authors
-
-* Marc Neudert &lt;marc.neudert (at) gmail (dot) com&gt;
-
-
-## License
-
-Currently looking for a suitable one. Will probably be one of
-GPL (with linking exemption) or MIT.
